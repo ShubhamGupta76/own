@@ -1,0 +1,106 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Auth Service - Public endpoints
+        # Gateway: /auth/** → Service: /api/auth/**
+        - id: auth-service
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/auth/**
+          filters:
+            - RewritePath=/auth/?(?<segment>.*), /api/auth/$\{segment}
+          
+        # User Service
+        # Gateway: /users/** → Service: /api/users/**
+        - id: user-service
+          uri: http://user-service:8080
+          predicates:
+            - Path=/users/**
+          filters:
+            - RewritePath=/users/?(?<segment>.*), /api/users/$\{segment}
+        
+        # Team Service
+        # Gateway: /teams/** → Service: /api/teams/**
+        - id: team-service
+          uri: http://team-service:8080
+          predicates:
+            - Path=/teams/**
+          filters:
+            - RewritePath=/teams/?(?<segment>.*), /api/teams/$\{segment}
+        
+        # Channel Service
+        # Gateway: /channels/** → Service: /api/channels/**
+        - id: channel-service
+          uri: http://channel-service:8080
+          predicates:
+            - Path=/channels/**
+          filters:
+            - RewritePath=/channels/?(?<segment>.*), /api/channels/$\{segment}
+        
+        # Chat Service
+        # Gateway: /chat/** → Service: /api/chat/**
+        - id: chat-service
+          uri: http://chat-service:8080
+          predicates:
+            - Path=/chat/**
+          filters:
+            - RewritePath=/chat/?(?<segment>.*), /api/chat/$\{segment}
+        
+        # Meeting Service
+        # Gateway: /meetings/** → Service: /api/meetings/**
+        - id: meeting-service
+          uri: http://meeting-service:8080
+          predicates:
+            - Path=/meetings/**
+          filters:
+            - RewritePath=/meetings/?(?<segment>.*), /api/meetings/$\{segment}
+        
+        # File Service
+        # Gateway: /files/** → Service: /api/files/**
+        - id: file-service
+          uri: http://file-service:8080
+          predicates:
+            - Path=/files/**
+          filters:
+            - RewritePath=/files/?(?<segment>.*), /api/files/$\{segment}
+        
+        # Notification Service
+        # Gateway: /notifications/** → Service: /api/notifications/**
+        - id: notification-service
+          uri: http://notification-service:8080
+          predicates:
+            - Path=/notifications/**
+          filters:
+            - RewritePath=/notifications/?(?<segment>.*), /api/notifications/$\{segment}
+        
+        # Task Service
+        # Gateway: /tasks/** → Service: /api/tasks/**
+        - id: task-service
+          uri: http://task-service:8080
+          predicates:
+            - Path=/tasks/**
+          filters:
+            - RewritePath=/tasks/?(?<segment>.*), /api/tasks/$\{segment}
+
+# JWT Configuration
+jwt:
+  secret: DevBlockerSecretKeyForJWTTokenGeneration123456789012345678901234567890
+  expiration: 86400000
+
+# Logging
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.filter: DEBUG
+    org.springframework.web.server.adapter: DEBUG
+    org.springframework.http.server.reactive: DEBUG
+    com.connect.API.Gateway: DEBUG
+    com.connect.API.Gateway.filter: DEBUG
+    reactor.netty: INFO
+

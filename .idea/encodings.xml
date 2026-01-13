@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/API Gateway/API-Gateway/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Auth/Auth/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Channel/Channel/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Chat/Chat/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/File/File/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Meeting/Meeting/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Notification/Notification/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Search/Search/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Task/Task/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Team/Team/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/User/User/src/main/java" charset="UTF-8" />
+  </component>
+</project>

@@ -1,0 +1,16 @@
+target/
+.git/
+.gitignore
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+.env
+.env.local
+README.md
+HELP.md
+.mvn/
+mvnw
+mvnw.cmd

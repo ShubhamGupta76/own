@@ -1,0 +1,332 @@
+version: "3.9"
+
+services:
+  # PostgreSQL Database
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 7643023962
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - devblocker-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  # Frontend Service (Vite + React)
+  frontend:
+    build:
+      context: devblocker
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://api-gateway:8080
+    container_name: devblocker-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - devblocker-network
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: API Gateway/API-Gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+    networks:
+      - devblocker-network
+    depends_on:
+      - auth-service
+      - user-service
+      - team-service
+      - channel-service
+      - chat-service
+      - task-service
+      - notification-service
+      - meeting-service
+      - file-service
+      - search-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Auth Service
+  auth-service:
+    build:
+      context: Auth/Auth
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # User Service
+  user-service:
+    build:
+      context: User/User
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "8082:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Team Service
+  team-service:
+    build:
+      context: Team/Team
+      dockerfile: Dockerfile
+    container_name: team-service
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Channel Service
+  channel-service:
+    build:
+      context: Channel/Channel
+      dockerfile: Dockerfile
+    container_name: channel-service
+    ports:
+      - "8084:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Chat Service
+  chat-service:
+    build:
+      context: Chat/Chat
+      dockerfile: Dockerfile
+    container_name: chat-service
+    ports:
+      - "8085:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Task Service
+  task-service:
+    build:
+      context: Task/Task
+      dockerfile: Dockerfile
+    container_name: task-service
+    ports:
+      - "8086:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Notification Service
+  notification-service:
+    build:
+      context: Notification/Notification
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "8091:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Meeting Service
+  meeting-service:
+    build:
+      context: Meeting/Meeting
+      dockerfile: Dockerfile
+    container_name: meeting-service
+    ports:
+      - "8088:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # File Service
+  file-service:
+    build:
+      context: File/File
+      dockerfile: Dockerfile
+    container_name: file-service
+    ports:
+      - "8089:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    volumes:
+      - file-storage:/app/files
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Search Service
+  search-service:
+    build:
+      context: Search/Search
+      dockerfile: Dockerfile
+    container_name: search-service
+    ports:
+      - "8090:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx512m -Xms256m
+      SERVER_PORT: 8080
+    networks:
+      - devblocker-network
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  devblocker-network:
+    driver: bridge
+
+volumes:
+  file-storage:
+    driver: local
+  postgres-data:
+    driver: local

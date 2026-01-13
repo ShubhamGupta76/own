@@ -1,0 +1,1145 @@
+{
+	"info": {
+		"_postman_id": "devblocker-collection-2024",
+		"name": "DevBlocker API Collection",
+		"description": "Complete API collection for DevBlocker microservices via API Gateway (Teams + Jira platform). All requests go through gateway at port 8080.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth Service",
+			"item": [
+				{
+					"name": "Admin Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 && pm.response.json().token) {",
+									"    pm.environment.set('jwt_token', pm.response.json().token);",
+									"    pm.environment.set('user_id', pm.response.json().userId);",
+									"    pm.environment.set('organization_id', pm.response.json().organizationId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@devblocker.com\",\n    \"password\": \"Admin@123\",\n    \"firstName\": \"Admin\",\n    \"lastName\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/auth/register",
+							"host": ["{{gateway_url}}"],
+							"path": ["auth", "register"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 && pm.response.json().token) {",
+									"    pm.environment.set('jwt_token', pm.response.json().token);",
+									"    pm.environment.set('user_id', pm.response.json().userId);",
+									"    pm.environment.set('organization_id', pm.response.json().organizationId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@devblocker.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/auth/login",
+							"host": ["{{gateway_url}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Employee Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 && pm.response.json().token) {",
+									"    pm.environment.set('jwt_token', pm.response.json().token);",
+									"    pm.environment.set('user_id', pm.response.json().userId);",
+									"    pm.environment.set('organization_id', pm.response.json().organizationId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"employee@company.com\",\n    \"password\": \"Employee@123\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/auth/employee/login",
+							"host": ["{{gateway_url}}"],
+							"path": ["auth", "employee", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Service",
+			"item": [
+				{
+					"name": "Create Organization",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Acme Corporation\",\n    \"domain\": \"acme.com\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/users/organizations",
+							"host": ["{{gateway_url}}"],
+							"path": ["users", "organizations"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"employee@company.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"role\": \"EMPLOYEE\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/users",
+							"host": ["{{gateway_url}}"],
+							"path": ["users"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/users",
+							"host": ["{{gateway_url}}"],
+							"path": ["users"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/users/profile",
+							"host": ["{{gateway_url}}"],
+							"path": ["users", "profile"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Team Service",
+			"item": [
+				{
+					"name": "Create Team",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Engineering Team\",\n    \"description\": \"Software development team\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/teams",
+							"host": ["{{gateway_url}}"],
+							"path": ["teams"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Team Member",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": 2\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/teams/1/members",
+							"host": ["{{gateway_url}}"],
+							"path": ["teams", "1", "members"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Team Member",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/teams/1/members/2",
+							"host": ["{{gateway_url}}"],
+							"path": ["teams", "1", "members", "2"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Teams",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/teams",
+							"host": ["{{gateway_url}}"],
+							"path": ["teams"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Teams",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/teams/my",
+							"host": ["{{gateway_url}}"],
+							"path": ["teams", "my"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Channel Service",
+			"item": [
+				{
+					"name": "Create Channel",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"general\",\n    \"description\": \"General discussion channel\",\n    \"teamId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/channels/teams/1/channels",
+							"host": ["{{gateway_url}}"],
+							"path": ["channels", "teams", "1", "channels"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Team Channels",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/channels/teams/1/channels",
+							"host": ["{{gateway_url}}"],
+							"path": ["channels", "teams", "1", "channels"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Channel Member",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": 2\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/channels/channels/1/members",
+							"host": ["{{gateway_url}}"],
+							"path": ["channels", "channels", "1", "members"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Channel Members",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/channels/channels/1/members",
+							"host": ["{{gateway_url}}"],
+							"path": ["channels", "channels", "1", "members"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat Service",
+			"item": [
+				{
+					"name": "Send Text Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"chatRoomId\": 1,\n    \"content\": \"Hello team! @2 how are you?\",\n    \"messageType\": \"TEXT\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/chat/send",
+							"host": ["{{gateway_url}}"],
+							"path": ["chat", "send"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send File Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"chatRoomId\": 1,\n    \"content\": \"Check this file\",\n    \"messageType\": \"FILE\",\n    \"fileId\": 1,\n    \"fileUrl\": \"https://example.com/file.pdf\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/chat/send",
+							"host": ["{{gateway_url}}"],
+							"path": ["chat", "send"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Channel Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/chat/channel/1?page=0&size=20",
+							"host": ["{{gateway_url}}"],
+							"path": ["chat", "channel", "1"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Direct Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/chat/direct/2?page=0&size=20",
+							"host": ["{{gateway_url}}"],
+							"path": ["chat", "direct", "2"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meeting Service",
+			"item": [
+				{
+					"name": "Create Instant Call",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Quick Standup\",\n    \"description\": \"Daily standup meeting\",\n    \"teamId\": 1,\n    \"channelId\": 1,\n    \"meetingUrl\": \"https://meet.devblocker.com/abc123\",\n    \"participantIds\": [2, 3]\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/meetings/instant",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "instant"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Schedule Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Sprint Planning\",\n    \"description\": \"Q1 Sprint planning session\",\n    \"startTime\": \"2024-12-20T10:00:00\",\n    \"endTime\": \"2024-12-20T12:00:00\",\n    \"teamId\": 1,\n    \"channelId\": 1,\n    \"meetingUrl\": \"https://meet.devblocker.com/sprint123\",\n    \"participantIds\": [2, 3, 4]\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/meetings/schedule",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "schedule"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/meetings/1/join",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "1", "join"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Leave Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/meetings/1/leave",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "1", "leave"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Screen Share",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/meetings/1/screen-share/start",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "1", "screen-share", "start"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Screen Share",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/meetings/1/screen-share/stop",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "1", "screen-share", "stop"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Recording",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/meetings/1/recording/start",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "1", "recording", "start"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Recording",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"recordingUrl\": \"https://recordings.devblocker.com/meeting-123\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/meetings/1/recording/stop",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "1", "recording", "stop"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Meeting Note",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Action items: 1. Review PR #123 2. Update documentation\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/meetings/1/notes",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "1", "notes"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Meeting Notes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/meetings/1/notes",
+							"host": ["{{gateway_url}}"],
+							"path": ["meetings", "1", "notes"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "File Service",
+			"item": [
+				{
+					"name": "Upload File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "channelId",
+									"value": "1",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{gateway_url}}/files/upload",
+							"host": ["{{gateway_url}}"],
+							"path": ["files", "upload"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Channel Files",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/files/channel/1",
+							"host": ["{{gateway_url}}"],
+							"path": ["files", "channel", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download File",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/files/1/download",
+							"host": ["{{gateway_url}}"],
+							"path": ["files", "1", "download"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Lock File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/files/1/lock",
+							"host": ["{{gateway_url}}"],
+							"path": ["files", "1", "lock"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unlock File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/files/1/unlock",
+							"host": ["{{gateway_url}}"],
+							"path": ["files", "1", "unlock"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Task Service",
+			"item": [
+				{
+					"name": "Create Task",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Fix login bug\",\n    \"description\": \"User cannot login with special characters in password\",\n    \"channelId\": 1,\n    \"taskType\": \"BUG\",\n    \"priority\": \"HIGH\",\n    \"assignedTo\": 2,\n    \"dueDate\": \"2024-12-25T23:59:59\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/tasks",
+							"host": ["{{gateway_url}}"],
+							"path": ["tasks"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Task",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": 3\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/tasks/1/assign",
+							"host": ["{{gateway_url}}"],
+							"path": ["tasks", "1", "assign"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"IN_PROGRESS\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/tasks/1/status",
+							"host": ["{{gateway_url}}"],
+							"path": ["tasks", "1", "status"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Task Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Working on this now. Will update by EOD.\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/tasks/1/comments",
+							"host": ["{{gateway_url}}"],
+							"path": ["tasks", "1", "comments"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Channel Tasks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/tasks/channel/1",
+							"host": ["{{gateway_url}}"],
+							"path": ["tasks", "channel", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Task by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/tasks/1",
+							"host": ["{{gateway_url}}"],
+							"path": ["tasks", "1"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notification Service",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/notifications",
+							"host": ["{{gateway_url}}"],
+							"path": ["notifications"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/notifications/unread",
+							"host": ["{{gateway_url}}"],
+							"path": ["notifications", "unread"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/notifications/unread/count",
+							"host": ["{{gateway_url}}"],
+							"path": ["notifications", "unread", "count"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/notifications/1/read",
+							"host": ["{{gateway_url}}"],
+							"path": ["notifications", "1", "read"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/notifications/read-all",
+							"host": ["{{gateway_url}}"],
+							"path": ["notifications", "read-all"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Activity Feed",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/notifications/activity?limit=50",
+							"host": ["{{gateway_url}}"],
+							"path": ["notifications", "activity"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		}
+	],
+	"variable": []
+}
+

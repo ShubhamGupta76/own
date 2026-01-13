@@ -1,0 +1,25 @@
+package com.connect.Auth.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * DTO for authentication response containing JWT token
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthResponse {
+    
+    private String token;
+    private String tokenType = "Bearer";
+    private Long userId;
+    private String email;
+    private String role;
+    private Long organizationId;
+    private String message;
+}
+
