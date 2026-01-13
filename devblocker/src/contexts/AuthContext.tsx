@@ -134,43 +134,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const login = useCallback(async (credentials: LoginRequest): Promise<{ role: UserRole; isFirstLogin?: boolean; profileSetupRequired?: boolean }> => {
     try {
-      console.log('[AuthContext] Starting admin/manager login');
       const response = await authApi.login(credentials);
-      console.log('[AuthContext] Admin/manager login response:', response);
       
       if (response.token) {
-        console.log('[AuthContext] Setting token state and storing in localStorage');
         setTokenState(response.token);
-        setToken(response.token); // Ensure it's in localStorage
+        setToken(response.token);
         
-        // Verify token was stored
-        const storedToken = getToken();
-        console.log('[AuthContext] Token verification:', storedToken ? `Token exists (${storedToken.length} chars)` : 'Token missing!');
+        // Small delay to ensure token is stored before making requests
+        await new Promise(resolve => setTimeout(resolve, 50));
         
-        if (!storedToken) {
-          console.error('[AuthContext] CRITICAL: Token was not stored properly!');
-          throw new Error('Failed to store authentication token');
-        }
-        
-        // Wait a bit to ensure token is stored before making requests
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        console.log('[AuthContext] Refreshing user profile');
         await refreshUser();
         
-        console.log('[AuthContext] Login successful, returning response');
         return {
           role: response.role,
           isFirstLogin: response.isFirstLogin,
           profileSetupRequired: response.profileSetupRequired,
         };
       } else {
-        console.error('[AuthContext] No token in response!', response);
         throw new Error('No token received from login');
       }
     } catch (error: any) {
-      console.error('[AuthContext] Admin/manager login error:', error);
-      console.error('[AuthContext] Error details:', error.response?.data || error.message);
+      console.error('Login error:', error);
       throw error;
     }
   }, [refreshUser]);
@@ -180,43 +164,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const employeeLogin = useCallback(async (credentials: LoginRequest): Promise<{ role: UserRole; isFirstLogin?: boolean; profileSetupRequired?: boolean }> => {
     try {
-      console.log('[AuthContext] Starting employee login');
       const response = await authApi.employeeLogin(credentials);
-      console.log('[AuthContext] Employee login response:', response);
       
       if (response.token) {
-        console.log('[AuthContext] Setting token state and storing in localStorage');
         setTokenState(response.token);
-        setToken(response.token); // Ensure it's in localStorage
+        setToken(response.token);
         
-        // Verify token was stored
-        const storedToken = getToken();
-        console.log('[AuthContext] Token verification:', storedToken ? `Token exists (${storedToken.length} chars)` : 'Token missing!');
+        // Small delay to ensure token is stored before making requests
+        await new Promise(resolve => setTimeout(resolve, 50));
         
-        if (!storedToken) {
-          console.error('[AuthContext] CRITICAL: Token was not stored properly!');
-          throw new Error('Failed to store authentication token');
-        }
-        
-        // Wait a bit to ensure token is stored before making requests
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        console.log('[AuthContext] Refreshing user profile');
         await refreshUser();
         
-        console.log('[AuthContext] Login successful, returning response');
         return {
           role: response.role,
           isFirstLogin: response.isFirstLogin,
           profileSetupRequired: response.profileSetupRequired,
         };
       } else {
-        console.error('[AuthContext] No token in response!', response);
         throw new Error('No token received from login');
       }
     } catch (error: any) {
-      console.error('[AuthContext] Employee login error:', error);
-      console.error('[AuthContext] Error details:', error.response?.data || error.message);
+      console.error('Employee login error:', error);
       throw error;
     }
   }, [refreshUser]);
@@ -226,42 +194,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const organizationLogin = useCallback(async (credentials: LoginRequest): Promise<{ role: UserRole; isFirstLogin?: boolean; profileSetupRequired?: boolean }> => {
     try {
-      console.log('[AuthContext] Starting organization login');
       const response = await authApi.organizationLogin(credentials);
-      console.log('[AuthContext] Organization login response received:', response);
       
       if (response.token) {
-        console.log('[AuthContext] Setting token state and storing in localStorage');
         setTokenState(response.token);
-        setToken(response.token); // Ensure it's in localStorage
+        setToken(response.token);
         
-        // Verify token was stored
-        const storedToken = getToken();
-        console.log('[AuthContext] Token verification:', storedToken ? `Token exists (${storedToken.length} chars)` : 'Token missing!');
+        // Small delay to ensure token is stored before making requests
+        await new Promise(resolve => setTimeout(resolve, 50));
         
-        if (!storedToken) {
-          console.error('[AuthContext] CRITICAL: Token was not stored properly!');
-          throw new Error('Failed to store authentication token');
-        }
-        
-        // Wait a bit to ensure token is stored before making requests
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        console.log('[AuthContext] Refreshing user profile');
         await refreshUser();
         
-        console.log('[AuthContext] Login successful, returning response');
         return {
           role: response.role,
           isFirstLogin: response.isFirstLogin,
           profileSetupRequired: response.profileSetupRequired,
         };
       } else {
-        console.error('[AuthContext] No token in response!', response);
         throw new Error('No token received from login');
       }
     } catch (error: any) {
-      console.error('[AuthContext] Organization login error:', error);
+      console.error('Organization login error:', error);
       throw error;
     }
   }, [refreshUser]);
