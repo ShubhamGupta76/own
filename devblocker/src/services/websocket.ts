@@ -3,6 +3,7 @@
  * Handles WebSocket connections for real-time chat and notifications
  */
 
+import { Client } from '@stomp/stompjs';
 import { API_CONFIG, getToken, decodeJWT } from '../config/api';
 import type { ChatEvent, NotificationEvent, Message, WebRTCSignalingMessage } from '../types/api';
 
@@ -11,7 +12,7 @@ import type { ChatEvent, NotificationEvent, Message, WebRTCSignalingMessage } fr
  */
 class WebSocketManager {
   private chatConnections: Map<number, WebSocket> = new Map(); // channelId/userId -> WebSocket
-  private notificationConnection: WebSocket | null = null;
+  private notificationConnection: Client | null = null;
   private meetingConnections: Map<number, WebSocket> = new Map(); // meetingId -> WebSocket
   private chatCallbacks: Map<number, ((event: ChatEvent) => void)[]> = new Map();
   private notificationCallbacks: ((event: NotificationEvent) => void)[] = [];
@@ -116,7 +117,7 @@ class WebSocketManager {
   }
 
   /**
-   * Connect to notifications WebSocket
+   * Connect to notifications WebSocket using STOMP
    */
   connectToNotifications(onNotification: (event: NotificationEvent) => void): void {
     // Close existing connection if any
@@ -134,59 +135,65 @@ class WebSocketManager {
       return;
     }
 
-    const wsUrl = `${API_CONFIG.WS_BASE_URL}/ws/notifications?token=${token}&userId=${userId}`;
+    // Build WebSocket URL - token in query params for initial handshake
+    const wsUrl = `${API_CONFIG.WS_BASE_URL}/ws/notifications?token=${encodeURIComponent(token)}&userId=${userId}`;
 
     try {
-      const ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        console.log('Notifications WebSocket connected');
-        
-        // Subscribe to notifications topic
-        const topic = API_CONFIG.WS_TOPICS.NOTIFICATIONS(userId);
-        ws.send(JSON.stringify({
-          type: 'SUBSCRIBE',
-          destination: topic,
-        }));
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
+      const client = new Client({
+        brokerURL: wsUrl,
+        connectHeaders: {
+          Authorization: `Bearer ${token}`,
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        onConnect: (frame) => {
+          console.log('Notifications STOMP WebSocket connected', frame);
           
-          // Handle notification message
-          if (data.type === 'NOTIFICATION') {
-            onNotification({
-              type: 'NOTIFICATION_RECEIVED',
-              notification: data.payload || data,
+          // Subscribe to notifications topic
+          const topic = API_CONFIG.WS_TOPICS.NOTIFICATIONS(userId);
+          
+          if (client.connected) {
+            client.subscribe(topic, (message) => {
+              try {
+                const data = JSON.parse(message.body);
+                
+                // Handle notification message
+                if (data.type === 'NOTIFICATION') {
+                  onNotification({
+                    type: 'NOTIFICATION_RECEIVED',
+                    notification: data.payload || data,
+                  });
+                } else if (data.id) {
+                  // Direct notification object
+                  onNotification({
+                    type: 'NOTIFICATION_RECEIVED',
+                    notification: data,
+                  });
+                }
+              } catch (error) {
+                console.error('Error parsing notification message:', error);
+              }
             });
-          } else if (data.id) {
-            // Direct notification object
-            onNotification({
-              type: 'NOTIFICATION_RECEIVED',
-              notification: data,
-            });
+            console.log(`Subscribed to notifications topic: ${topic}`);
           }
-        } catch (error) {
-          console.error('Error parsing notification message:', error);
-        }
-      };
+        },
+        onStompError: (frame) => {
+          console.error('STOMP error:', frame.headers['message'] || frame);
+        },
+        onWebSocketError: (error) => {
+          console.warn('Notifications WebSocket error:', error);
+        },
+        onDisconnect: () => {
+          console.log('Notifications WebSocket disconnected');
+          this.notificationConnection = null;
+        },
+      });
 
-      ws.onerror = (error) => {
-        // Don't log as error if WebSocket endpoint doesn't exist (404)
-        // This is expected if WebSocket support isn't implemented yet
-        console.warn('Notifications WebSocket error (endpoint may not be available):', error);
-      };
-
-      ws.onclose = (event) => {
-        // Only log if it wasn't a normal closure or if code indicates an issue
-        if (event.code !== 1000 && event.code !== 1001) {
-          console.warn('Notifications WebSocket closed:', event.code, event.reason);
-        }
-        this.notificationConnection = null;
-      };
-
-      this.notificationConnection = ws;
+      // Activate the client
+      client.activate();
+      
+      this.notificationConnection = client;
       this.notificationCallbacks.push(onNotification);
     } catch (error) {
       console.error('Error connecting to notifications WebSocket:', error);
@@ -198,7 +205,9 @@ class WebSocketManager {
    */
   disconnectFromNotifications(): void {
     if (this.notificationConnection) {
-      this.notificationConnection.close();
+      if (this.notificationConnection.connected) {
+        this.notificationConnection.deactivate();
+      }
       this.notificationConnection = null;
       this.notificationCallbacks = [];
     }

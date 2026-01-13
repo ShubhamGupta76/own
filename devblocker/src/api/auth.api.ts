@@ -90,12 +90,24 @@ export const authApi = {
    * Organization Login
    */
   organizationLogin: async (credentials: LoginRequest): Promise<LoginResponse> => {
+    console.log('[AUTH] Starting organization login for:', credentials.email);
     const response = await apiClient.post<LoginResponse>(
       API_CONFIG.ENDPOINTS.AUTH.ORGANIZATION_LOGIN,
       credentials
     );
+    console.log('[AUTH] Organization login response:', JSON.stringify(response.data, null, 2));
+    console.log('[AUTH] Response status:', response.status);
+    console.log('[AUTH] Response headers:', response.headers);
+    
     if (response.data.token) {
+      console.log('[AUTH] Token received, length:', response.data.token.length);
       setToken(response.data.token);
+      console.log('[AUTH] Token stored in localStorage');
+      
+      // Verify token was stored
+      const storedToken = localStorage.getItem('jwt_token');
+      console.log('[AUTH] Verification - token in localStorage:', storedToken ? `Yes (${storedToken.length} chars)` : 'NO!');
+      
       if (response.data.userId) {
         localStorage.setItem('user_id', response.data.userId.toString());
       }
@@ -108,6 +120,9 @@ export const authApi = {
       if (response.data.role) {
         localStorage.setItem('user_role', response.data.role);
       }
+    } else {
+      console.error('[AUTH] No token in login response!', response.data);
+      console.error('[AUTH] Response keys:', Object.keys(response.data));
     }
     return response.data;
   },

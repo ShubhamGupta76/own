@@ -51,7 +51,11 @@ public class JwtUtil {
     }
     
     public String extractRole(String token) {
-        return extractClaim(token, claims -> claims.get("role", String.class));
+        return extractClaim(token, claims -> {
+            Object role = claims.get("role");
+            if (role == null) return null;
+            return role.toString();
+        });
     }
     
     public Long extractOrganizationId(String token) {

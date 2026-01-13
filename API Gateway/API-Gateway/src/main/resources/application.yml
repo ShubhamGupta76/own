@@ -7,6 +7,13 @@ spring:
   cloud:
     gateway:
       routes:
+        # WebSocket Routes - Must be FIRST to match before other routes
+        # Gateway: /ws/** → Service: /ws/**
+        - id: notification-websocket
+          uri: http://notification-service:8080
+          predicates:
+            - Path=/ws/notifications/**
+        
         # Auth Service - Public endpoints
         # Gateway: /auth/** → Service: /api/auth/**
         - id: auth-service

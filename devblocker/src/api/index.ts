@@ -23,13 +23,35 @@ export const apiClient: AxiosInstance = axios.create({
  */
 apiClient.interceptors.request.use(
   (config) => {
+    // Always log to help debug
     const token = getToken();
+    const allKeys = Object.keys(localStorage);
+    const directToken = localStorage.getItem('jwt_token');
+    
+    console.log('========================================');
+    console.log('[API INTERCEPTOR] Request to:', config.url);
+    console.log('[API INTERCEPTOR] Method:', config.method?.toUpperCase());
+    console.log('[API INTERCEPTOR] Token from getToken():', token ? `Yes (${token.length} chars)` : 'NO');
+    console.log('[API INTERCEPTOR] localStorage keys:', allKeys);
+    console.log('[API INTERCEPTOR] jwt_token directly:', directToken ? `EXISTS (${directToken.length} chars)` : 'MISSING');
+    console.log('[API INTERCEPTOR] Token preview:', token ? token.substring(0, 30) + '...' : 'null');
+    
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+      const authValue = `Bearer ${token}`;
+      config.headers.Authorization = authValue;
+      console.log('[API INTERCEPTOR] ✓ Authorization header added');
+      console.log('[API INTERCEPTOR] Header value preview:', authValue.substring(0, 40) + '...');
+      console.log('[API INTERCEPTOR] Full headers:', JSON.stringify(config.headers, null, 2));
+    } else {
+      console.error('[API INTERCEPTOR] ✗ CRITICAL: No token available!');
+      console.error('[API INTERCEPTOR] getToken() returned:', token);
+      console.error('[API INTERCEPTOR] localStorage.getItem("jwt_token"):', directToken);
     }
+    console.log('========================================');
     return config;
   },
   (error) => {
+    console.error('[API INTERCEPTOR] Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -47,12 +69,18 @@ apiClient.interceptors.response.use(
                           url.includes('/auth/employee/login');
     
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      // Unauthorized - token expired or invalid (but not for auth endpoints)
-      removeToken();
+      console.error('[API] 401 Unauthorized for:', url);
+      console.error('[API] Error response:', error.response?.data);
+      console.error('[API] Current token in localStorage:', localStorage.getItem('jwt_token') ? 'exists' : 'missing');
+      
+      // Don't remove token immediately - might be a temporary issue
+      // Only remove if we're sure it's invalid
+      // removeToken();
+      
       // Only redirect if we're not already on the login page
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-        window.location.href = '/login';
-      }
+      // if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+      //   window.location.href = '/login';
+      // }
     }
     return Promise.reject(error);
   }

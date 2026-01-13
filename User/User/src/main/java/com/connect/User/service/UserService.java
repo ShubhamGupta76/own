@@ -91,6 +91,16 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
+        // If admin is accessing their own profile, allow it
+        if (userId.equals(adminId)) {
+            return user;
+        }
+        
+        // If user has no organizationId, deny access (unless it's the admin themselves)
+        if (user.getOrganizationId() == null) {
+            throw new RuntimeException("User does not belong to any organization");
+        }
+        
         // Verify admin owns the organization
         Organization organization = organizationRepository.findById(user.getOrganizationId())
                 .orElseThrow(() -> new RuntimeException("Organization not found"));

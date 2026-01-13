@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +22,7 @@ import java.util.Collections;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtUtil jwtUtil;
@@ -43,6 +45,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String role = jwtUtil.extractRole(token);
                 String email = jwtUtil.extractEmail(token);
                 
+                if (role == null || role.isEmpty()) {
+                    log.warn("JWT token missing role claim for email: {}", email);
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                
+                log.debug("Setting authentication for user: {} with role: {}", email, role);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         email,
                         null,
@@ -50,9 +59,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("Authentication set successfully for user: {} with authority: ROLE_{}", email, role);
+            } else {
+                log.warn("JWT token validation failed for request: {}", request.getRequestURI());
             }
         } catch (Exception e) {
-            // Token validation failed
+            log.error("Error processing JWT token for request: {}. Error: {}", request.getRequestURI(), e.getMessage(), e);
         }
         
         filterChain.doFilter(request, response);
