@@ -22,10 +22,10 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Admin and Employee authentication APIs")
 public class AuthController {
-    
+
     private final AuthService authService;
     private final EmployeeAuthService employeeAuthService;
-    
+
     /**
      * Register a new admin
      * POST /api/auth/register
@@ -43,7 +43,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
-    
+
     /**
      * Login admin
      * POST /api/auth/login
@@ -61,7 +61,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
-    
+
     /**
      * Login employee
      * POST /api/auth/employee/login
@@ -80,4 +80,3 @@ public class AuthController {
         }
     }
 }
-
