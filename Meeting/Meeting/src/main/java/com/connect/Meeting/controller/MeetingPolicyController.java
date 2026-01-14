@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/meetings/policies")
+@RequestMapping("/api/v1/meetings/policies")
 @RequiredArgsConstructor
 @Tag(name = "Meeting Policy Management", description = "Admin APIs for controlling meeting feature")
 @SecurityRequirement(name = "bearerAuth")

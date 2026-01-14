@@ -24,7 +24,7 @@ import java.util.Map;
  * ADMIN only endpoints
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "User Management", description = "Admin APIs for user management")

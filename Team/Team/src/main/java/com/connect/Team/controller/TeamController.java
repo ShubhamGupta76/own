@@ -18,7 +18,7 @@ import java.util.List;
  * Controller for team management (read-only for admin)
  */
 @RestController
-@RequestMapping("/api/admin/teams")
+@RequestMapping("/api/v1/admin/teams")
 @RequiredArgsConstructor
 @Tag(name = "Team Management", description = "Admin read-only APIs for viewing teams and members")
 @SecurityRequirement(name = "bearerAuth")

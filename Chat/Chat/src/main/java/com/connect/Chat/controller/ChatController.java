@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
+    
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping("/api/v1/chat")
 @RequiredArgsConstructor
 @Tag(name = "Chat", description = "Employee chat APIs for sending and receiving messages")
 @SecurityRequirement(name = "bearerAuth")

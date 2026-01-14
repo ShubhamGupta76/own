@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/chat/policies")
+@RequestMapping("/api/v1/chat/policies")
 @RequiredArgsConstructor
 @Tag(name = "Chat Policy Management", description = "Admin APIs for controlling chat feature")
 @SecurityRequirement(name = "bearerAuth")

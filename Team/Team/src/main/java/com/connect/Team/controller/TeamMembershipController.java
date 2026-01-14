@@ -12,7 +12,7 @@ import java.util.Map;
  * Called by Channel Service to validate team membership
  */
 @RestController
-@RequestMapping("/api/teams")
+@RequestMapping("/api/v1/teams")
 @RequiredArgsConstructor
 public class TeamMembershipController {
     

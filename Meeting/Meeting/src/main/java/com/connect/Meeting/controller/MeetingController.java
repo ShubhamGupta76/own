@@ -22,7 +22,7 @@ import java.util.Map;
  * Handles instant calls, scheduled meetings, participants, notes, screen sharing, and recording
  */
 @RestController
-@RequestMapping("/api/meetings")
+@RequestMapping("/api/v1/meetings")
 @RequiredArgsConstructor
 @Tag(name = "Meeting Management", description = "Meeting APIs for instant calls, scheduled meetings, and collaboration features")
 @SecurityRequirement(name = "bearerAuth")

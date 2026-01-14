@@ -38,10 +38,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Register WebSocket endpoint
-        registry.addEndpoint("/ws/chat")
-                .setAllowedOriginPatterns("*") // In production, restrict to specific origins
-                .withSockJS(); // Enable SockJS fallback options
+        String allowedOrigins = System.getenv("WEBSOCKET_ALLOWED_ORIGINS");
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            registry.addEndpoint("/ws/chat")
+                    .setAllowedOriginPatterns(allowedOrigins.split(","))
+                    .withSockJS();
+        } else {
+            registry.addEndpoint("/ws/chat")
+                    .setAllowedOriginPatterns("http://localhost:3000", "http://frontend:3000")
+                    .withSockJS();
+        }
     }
     
     /**

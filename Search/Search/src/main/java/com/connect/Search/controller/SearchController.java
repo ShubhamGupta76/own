@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/search")
+@RequestMapping("/api/v1/search")
 @RequiredArgsConstructor
 @Tag(name = "Search", description = "Admin read APIs for searching users, teams, and channels")
 @SecurityRequirement(name = "bearerAuth")

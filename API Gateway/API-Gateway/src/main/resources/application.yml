@@ -19,7 +19,22 @@ spring:
           predicates:
             - Path=/auth/**
           filters:
-            - RewritePath=/auth/?(?<segment>.*), /api/auth/$\{segment}
+            - RewritePath=/auth/?(?<segment>.*), /api/v1/auth/$\{segment}
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,GATEWAY_TIMEOUT
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackoff: 500ms
+                  factor: 2
+                  basedOnPreviousValue: false
           
         
         - id: user-service
@@ -27,23 +42,21 @@ spring:
           predicates:
             - Path=/users/**
           filters:
-            - RewritePath=/users/?(?<segment>.*), /api/users/$\{segment}
-        
+            - RewritePath=/users/?(?<segment>.*), /api/v1/users/$\{segment}
         
         - id: team-service
           uri: http://team-service:8080
           predicates:
             - Path=/teams/**
           filters:
-            - RewritePath=/teams/?(?<segment>.*), /api/teams/$\{segment}
-        
+            - RewritePath=/teams/?(?<segment>.*), /api/v1/teams/$\{segment}
         
         - id: channel-service
           uri: http://channel-service:8080
           predicates:
             - Path=/channels/**
           filters:
-            - RewritePath=/channels/?(?<segment>.*), /api/channels/$\{segment}
+            - RewritePath=/channels/?(?<segment>.*), /api/v1/channels/$\{segment}
         
         
         - id: chat-service
@@ -51,7 +64,12 @@ spring:
           predicates:
             - Path=/chat/**
           filters:
-            - RewritePath=/chat/?(?<segment>.*), /api/chat/$\{segment}
+            - RewritePath=/chat/?(?<segment>.*), /api/v1/chat/$\{segment}
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 30
+                redis-rate-limiter.burstCapacity: 60
+                redis-rate-limiter.requestedTokens: 1
         
         
         - id: meeting-service
@@ -59,7 +77,12 @@ spring:
           predicates:
             - Path=/meetings/**
           filters:
-            - RewritePath=/meetings/?(?<segment>.*), /api/meetings/$\{segment}
+            - RewritePath=/meetings/?(?<segment>.*), /api/v1/meetings/$\{segment}
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
         
     
         - id: file-service
@@ -67,7 +90,7 @@ spring:
           predicates:
             - Path=/files/**
           filters:
-            - RewritePath=/files/?(?<segment>.*), /api/files/$\{segment}
+            - RewritePath=/files/?(?<segment>.*), /api/v1/files/$\{segment}
         
        
         - id: notification-service
@@ -75,7 +98,7 @@ spring:
           predicates:
             - Path=/notifications/**
           filters:
-            - RewritePath=/notifications/?(?<segment>.*), /api/notifications/$\{segment}
+            - RewritePath=/notifications/?(?<segment>.*), /api/v1/notifications/$\{segment}
         
         
         - id: task-service
@@ -87,17 +110,33 @@ spring:
 
 
 jwt:
-  secret: DevBlockerSecretKeyForJWTTokenGeneration123456789012345678901234567890
-  expiration: 86400000
+  secret: ${JWT_SECRET:DevBlockerSecretKeyForJWTTokenGeneration123456789012345678901234567890}
+  expiration: ${JWT_EXPIRATION:86400000}
 
+rate-limit:
+  requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:100}
+  enabled: true
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.gateway.filter: DEBUG
-    org.springframework.web.server.adapter: DEBUG
-    org.springframework.http.server.reactive: DEBUG
-    com.connect.API.Gateway: DEBUG
-    com.connect.API.Gateway.filter: DEBUG
+    root: ${LOG_LEVEL:INFO}
+    org.springframework.cloud.gateway: ${LOG_LEVEL:INFO}
+    com.connect.API.Gateway: ${LOG_LEVEL:INFO}
     reactor.netty: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
 

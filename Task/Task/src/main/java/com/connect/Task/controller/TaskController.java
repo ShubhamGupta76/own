@@ -22,7 +22,7 @@ import java.util.Map;
  * Handles task creation, assignment, status updates, and comments
  */
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("/api/v1/tasks")
 @RequiredArgsConstructor
 @Tag(name = "Task Management", description = "Task and work management APIs (Jira-like)")
 @SecurityRequirement(name = "bearerAuth")

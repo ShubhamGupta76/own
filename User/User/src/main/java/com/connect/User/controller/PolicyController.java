@@ -21,7 +21,7 @@ import java.util.List;
  * ADMIN only endpoints
  */
 @RestController
-@RequestMapping("/api/policies")
+@RequestMapping("/api/v1/policies")
 @RequiredArgsConstructor
 @Tag(name = "Policy Management", description = "Admin APIs for organization-level policy management")
 @SecurityRequirement(name = "bearerAuth")

@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/teams")
+@RequestMapping("/api/v1/teams")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Team Management", description = "Team creation and management APIs")

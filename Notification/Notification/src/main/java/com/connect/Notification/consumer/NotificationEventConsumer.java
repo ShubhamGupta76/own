@@ -5,9 +5,11 @@ import com.connect.Notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +23,7 @@ import java.util.Map;
 public class NotificationEventConsumer {
     
     private final NotificationService notificationService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     
     /**
      * Consume chat events
@@ -39,7 +42,11 @@ public class NotificationEventConsumer {
             log.info("Processed chat event: {}", eventType);
         } catch (Exception e) {
             log.error("Error processing chat event: {}", e.getMessage(), e);
-            // In production, consider dead letter queue or retry mechanism
+            try {
+                sendToDeadLetterQueue("chat-events-dlq", event, e);
+            } catch (Exception dlqException) {
+                log.error("Failed to send event to DLQ: {}", dlqException.getMessage(), dlqException);
+            }
         }
     }
     
@@ -290,7 +297,6 @@ public class NotificationEventConsumer {
         );
     }
     
-    // Helper method to safely extract Long values from Map
     private Long getLongValue(Map<String, Object> event, String key) {
         Object value = event.get(key);
         if (value == null) return null;
@@ -298,6 +304,24 @@ public class NotificationEventConsumer {
         if (value instanceof Integer) return ((Integer) value).longValue();
         if (value instanceof Number) return ((Number) value).longValue();
         return null;
+    }
+    
+    private void sendToDeadLetterQueue(String dlqTopic, Map<String, Object> event, Exception error) {
+        try {
+            Map<String, Object> dlqMessage = new HashMap<>();
+            dlqMessage.put("originalEvent", event);
+            dlqMessage.put("error", error.getMessage());
+            dlqMessage.put("timestamp", System.currentTimeMillis());
+            dlqMessage.put("service", "notification-service");
+            
+            Long organizationId = getLongValue(event, "organizationId");
+            String key = organizationId != null ? organizationId.toString() : "unknown";
+            
+            kafkaTemplate.send(dlqTopic, key, dlqMessage);
+            log.info("Sent failed event to DLQ topic: {}", dlqTopic);
+        } catch (Exception e) {
+            log.error("Failed to send event to DLQ topic {}: {}", dlqTopic, e.getMessage(), e);
+        }
     }
 }
 
