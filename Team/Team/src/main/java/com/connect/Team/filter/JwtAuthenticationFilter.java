@@ -51,15 +51,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
                 
-                log.debug("Setting authentication for user: {} with role: {}", email, role);
+                String normalizedRole = role.trim().toUpperCase();
+                log.debug("Setting authentication for user: {} with role: {} (normalized: {})", email, role, normalizedRole);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         email,
                         null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + normalizedRole))
                 );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("Authentication set successfully for user: {} with authority: ROLE_{}", email, role);
+                log.debug("Authentication set successfully for user: {} with authority: ROLE_{}", email, normalizedRole);
             } else {
                 log.warn("JWT token validation failed for request: {}", request.getRequestURI());
             }
