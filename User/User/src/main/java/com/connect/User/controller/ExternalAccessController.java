@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
  * Handles inviting external users and managing their access
  */
 @RestController
-@RequestMapping("/api/external")
+@RequestMapping("/api/v1/external")
 @RequiredArgsConstructor
 @Tag(name = "External Access", description = "External user invitation and access management APIs")
 @SecurityRequirement(name = "bearerAuth")

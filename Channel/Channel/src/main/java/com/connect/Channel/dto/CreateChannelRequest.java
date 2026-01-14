@@ -5,9 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO for creating a channel
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,7 +16,7 @@ public class CreateChannelRequest {
     
     private String description;
     
-    private String type = "STANDARD"; // STANDARD or PRIVATE
+    private String type = "STANDARD"; 
     
     private Boolean chatEnabled = true;
     private Boolean fileEnabled = true;

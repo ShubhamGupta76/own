@@ -4,29 +4,33 @@ import com.connect.User.dto.OrganizationRequest;
 import com.connect.User.entity.Organization;
 import com.connect.User.repository.OrganizationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
-/**
- * Service for organization management
- */
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrganizationService {
     
     private final OrganizationRepository organizationRepository;
+    private final WebClient webClient;
     
-    /**
-     * Create a new organization
-     */
+    @Value("${auth.service.url:http://localhost:8101}")
+    private String authServiceUrl;
+    
     @Transactional
     public Organization createOrganization(OrganizationRequest request, Long adminId) {
-        // Check if organization name already exists
         if (organizationRepository.findByName(request.getName()).isPresent()) {
             throw new RuntimeException("Organization with name " + request.getName() + " already exists");
         }
         
-        // Check if domain already exists (if provided)
         if (request.getDomain() != null && !request.getDomain().isEmpty()) {
             if (organizationRepository.findByDomain(request.getDomain()).isPresent()) {
                 throw new RuntimeException("Organization with domain " + request.getDomain() + " already exists");
@@ -40,18 +44,42 @@ public class OrganizationService {
                 .active(true)
                 .build();
         
-        return organizationRepository.save(organization);
+        organization = organizationRepository.save(organization);
+        
+        try {
+            syncOrganizationIdToAuthService(adminId, organization.getId());
+            log.info("Successfully synced organizationId {} to Auth service for admin {}", organization.getId(), adminId);
+        } catch (Exception e) {
+            log.error("Failed to sync organizationId to Auth service for admin {}: {}", adminId, e.getMessage());
+        }
+        
+        return organization;
     }
     
-    /**
-     * Get organization by ID (admin can only access their own organization)
-     */
+    private void syncOrganizationIdToAuthService(Long adminId, Long organizationId) {
+        try {
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("adminId", adminId);
+            requestBody.put("organizationId", organizationId);
+            
+            webClient.post()
+                    .uri(authServiceUrl + "/api/auth/admin/organization-id")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+        } catch (Exception e) {
+            log.error("Error syncing organizationId to Auth service: {}", e.getMessage());
+            throw new RuntimeException("Failed to sync organizationId to Auth service: " + e.getMessage());
+        }
+    }
+    
     @Transactional(readOnly = true)
     public Organization getOrganization(Long organizationId, Long adminId) {
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
         
-        // Verify admin owns this organization
         if (!organization.getAdminId().equals(adminId)) {
             throw new RuntimeException("Access denied: You can only access your own organization");
         }
@@ -59,9 +87,6 @@ public class OrganizationService {
         return organization;
     }
     
-    /**
-     * Get organization by admin ID
-     */
     @Transactional(readOnly = true)
     public Organization getOrganizationByAdminId(Long adminId) {
         return organizationRepository.findByAdminId(adminId)

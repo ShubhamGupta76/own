@@ -12,12 +12,7 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
-/**
- * Security Configuration for API Gateway
- * Since we're using GlobalFilter for JWT validation,
- * we disable default Spring Security authentication
- * and allow all requests (JWT filter handles authentication)
- */
+
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -25,10 +20,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(
-                Arrays.asList("http://localhost:3000", "http://frontend:3000", "http://localhost:4200"));
+        
+        String allowedOriginsEnv = System.getenv("CORS_ALLOWED_ORIGINS");
+        if (allowedOriginsEnv != null && !allowedOriginsEnv.isEmpty()) {
+            configuration.setAllowedOrigins(Arrays.asList(allowedOriginsEnv.split(",")));
+        } else {
+            configuration.setAllowedOrigins(
+                    Arrays.asList("http://localhost:3000", "http://frontend:3000"));
+        }
+        
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "X-User-Id", "X-User-Role", "X-Organization-Id"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

@@ -1,8 +1,3 @@
-/**
- * Team Context
- * Manages teams, channels, and current selection state
- */
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { teamsApi, channelsApi } from '../api';
@@ -50,7 +45,6 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch teams
   const refreshTeams = async () => {
     if (!user?.organizationId || user.organizationId === 0) {
       setError('Please create an organization first to access teams.');
@@ -63,7 +57,6 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
       const fetchedTeams = await teamsApi.getMyTeams();
       setTeams(fetchedTeams);
       
-      // Auto-expand first team if none selected
       if (fetchedTeams.length > 0 && expandedTeams.size === 0) {
         setExpandedTeams(new Set([fetchedTeams[0].id]));
         setSelectedTeam(fetchedTeams[0]);
@@ -77,7 +70,6 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     }
   };
 
-  // Fetch channels for a team
   const refreshChannels = async (teamId: number) => {
     setIsLoading(true);
     setError(null);
@@ -88,7 +80,6 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
         [teamId]: fetchedChannels,
       }));
       
-      // Auto-select "General" channel or first channel if none selected
       if (fetchedChannels.length > 0 && (!selectedChannel || selectedChannel.teamId !== teamId)) {
         const generalChannel = fetchedChannels.find((c) => c.name.toLowerCase() === 'general');
         setSelectedChannel(generalChannel || fetchedChannels[0]);
@@ -101,7 +92,6 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     }
   };
 
-  // Toggle team expansion
   const toggleTeam = (teamId: number) => {
     setExpandedTeams((prev) => {
       const newSet = new Set(prev);
@@ -109,7 +99,6 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
         newSet.delete(teamId);
       } else {
         newSet.add(teamId);
-        // Auto-fetch channels if not loaded
         if (!channels[teamId]) {
           refreshChannels(teamId);
         }
@@ -118,22 +107,18 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     });
   };
 
-  // Select a team
   const selectTeam = async (team: Team | null) => {
     setSelectedTeam(team);
-    setSelectedChannel(null); // Clear channel selection when team changes
+    setSelectedChannel(null);
     
     if (team) {
-      // Expand team if not already expanded
       if (!expandedTeams.has(team.id)) {
         setExpandedTeams((prev) => new Set([...prev, team.id]));
       }
       
-      // Fetch channels if not loaded
       if (!channels[team.id]) {
         await refreshChannels(team.id);
       } else {
-        // Auto-select first channel or General
         const teamChannels = channels[team.id];
         if (teamChannels.length > 0) {
           const generalChannel = teamChannels.find((c) => c.name.toLowerCase() === 'general');
@@ -143,11 +128,9 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     }
   };
 
-  // Select a channel
   const selectChannel = (channel: Channel | null) => {
     setSelectedChannel(channel);
     if (channel) {
-      // Ensure parent team is selected
       const parentTeam = teams.find((t) => t.id === channel.teamId);
       if (parentTeam && parentTeam.id !== selectedTeam?.id) {
         setSelectedTeam(parentTeam);
@@ -155,10 +138,13 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     }
   };
 
-  // Create a new team
   const createTeam = async (name: string, description?: string): Promise<Team> => {
     if (!user?.organizationId || user.organizationId === 0) {
       throw new Error('Please create an organization first');
+    }
+
+    if (user.role !== 'ADMIN' && user.role !== 'MANAGER') {
+      throw new Error('Only ADMIN and MANAGER roles can create teams');
     }
 
     try {
@@ -167,11 +153,24 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
       return newTeam;
     } catch (err: any) {
       console.error('Error creating team:', err);
-      throw new Error(err.response?.data?.message || 'Failed to create team');
+      
+      let errorMessage = 'Failed to create team';
+      if (err.response) {
+        if (err.response.status === 403) {
+          errorMessage = 'Access denied: Only ADMIN and MANAGER roles can create teams';
+        } else if (err.response.status === 400) {
+          errorMessage = err.response.data?.message || 'Invalid request. Please check your input.';
+        } else if (err.response.data?.message) {
+          errorMessage = err.response.data.message;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      throw new Error(errorMessage);
     }
   };
 
-  // Create a new channel
   const createChannel = async (
     teamId: number,
     name: string,
@@ -190,7 +189,6 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     }
   };
 
-  // Initial fetch on mount
   useEffect(() => {
     if (user?.organizationId && user.organizationId > 0) {
       refreshTeams();

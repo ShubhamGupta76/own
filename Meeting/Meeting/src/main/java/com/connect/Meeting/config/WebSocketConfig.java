@@ -27,9 +27,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws/meeting")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+        String allowedOrigins = System.getenv("WEBSOCKET_ALLOWED_ORIGINS");
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            registry.addEndpoint("/ws/meeting")
+                    .setAllowedOriginPatterns(allowedOrigins.split(","))
+                    .withSockJS();
+        } else {
+            registry.addEndpoint("/ws/meeting")
+                    .setAllowedOriginPatterns("http://localhost:3000", "http://frontend:3000")
+                    .withSockJS();
+        }
     }
     
     @Override

@@ -15,12 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Controller for organization management
- * ADMIN only endpoints
- */
 @RestController
-@RequestMapping("/api/organizations")
+@RequestMapping("/api/v1/organizations")
 @RequiredArgsConstructor
 @Tag(name = "Organization Management", description = "Admin APIs for organization management")
 @SecurityRequirement(name = "bearerAuth")
@@ -29,17 +25,11 @@ public class OrganizationController {
     private final OrganizationService organizationService;
     private final JwtUtil jwtUtil;
     
-    /**
-     * Extract admin ID from JWT token
-     */
     private Long getAdminId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
     
-    /**
-     * Extract token from request
-     */
     private String extractToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -48,10 +38,6 @@ public class OrganizationController {
         throw new RuntimeException("Missing or invalid authorization header");
     }
     
-    /**
-     * Create a new organization
-     * POST /api/organizations
-     */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create organization", description = "Creates a new organization (tenant/company). Admin must be authenticated.")
@@ -67,10 +53,6 @@ public class OrganizationController {
         }
     }
     
-    /**
-     * Get organization by ID
-     * GET /api/organizations/{id}
-     */
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get organization", description = "Retrieves organization details. Admin can only access their own organization.")
@@ -86,10 +68,6 @@ public class OrganizationController {
         }
     }
     
-    /**
-     * Get organization by admin ID
-     * GET /api/organizations/my-organization
-     */
     @GetMapping("/my-organization")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get my organization", description = "Retrieves the organization associated with the authenticated admin.")
@@ -100,6 +78,17 @@ public class OrganizationController {
             return ResponseEntity.ok(organization);
         } catch (RuntimeException e) {
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    @GetMapping("/admin/{adminId}")
+    @Operation(summary = "Get organization by admin ID (internal)", description = "Internal endpoint for migration. Returns organization for the given admin ID.")
+    public ResponseEntity<Organization> getOrganizationByAdminIdInternal(@PathVariable Long adminId) {
+        try {
+            Organization organization = organizationService.getOrganizationByAdminId(adminId);
+            return ResponseEntity.ok(organization);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }

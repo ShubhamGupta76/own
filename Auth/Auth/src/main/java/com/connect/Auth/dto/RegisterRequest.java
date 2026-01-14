@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO for admin registration request
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

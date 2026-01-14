@@ -14,10 +14,7 @@ import reactor.core.publisher.Mono;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Service for employee authentication
- * Calls User Service to validate employee credentials
- */
+
 @Service
 @RequiredArgsConstructor
 public class EmployeeAuthService {
@@ -29,12 +26,10 @@ public class EmployeeAuthService {
     
     private final WebClient webClient;
     
-    /**
-     * Login employee and generate JWT token
-     */
+    
     @Transactional(readOnly = true)
     public AuthResponse loginEmployee(LoginRequest request) {
-        // Call User Service to validate employee credentials
+        
         Map<String, Object> validationRequest = new HashMap<>();
         validationRequest.put("email", request.getEmail());
         validationRequest.put("password", request.getPassword());
@@ -52,9 +47,8 @@ public class EmployeeAuthService {
                     validationResponse.getMessage() : "Invalid email or password");
         }
         
-        // Generate JWT token with employee details
-        // Role comes as string from JSON deserialization
-        String roleString = validationResponse.getRole(); // "EMPLOYEE" as string
+       
+        String roleString = validationResponse.getRole(); 
         String token = jwtUtil.generateToken(
                 validationResponse.getUserId(),
                 validationResponse.getEmail(),
@@ -72,9 +66,7 @@ public class EmployeeAuthService {
                 .build();
     }
     
-    /**
-     * EmployeeValidationResponse DTO for deserialization
-     */
+   
     @lombok.Data
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
@@ -84,7 +76,7 @@ public class EmployeeAuthService {
         private String firstName;
         private String lastName;
         private Long organizationId;
-        private String role; // "EMPLOYEE" as string
+        private String role; 
         private Boolean isValid;
         private Boolean isFirstLogin;
         private String message;

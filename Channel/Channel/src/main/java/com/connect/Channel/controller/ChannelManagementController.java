@@ -18,11 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Controller for channel management operations
- * ADMIN and MANAGER: full access
- * EMPLOYEE: can create channels if team member
- */
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -33,9 +29,7 @@ public class ChannelManagementController {
     private final ChannelManagementService channelManagementService;
     private final JwtUtil jwtUtil;
     
-    /**
-     * Extract user information from JWT token
-     */
+    
     private Long getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
@@ -59,12 +53,7 @@ public class ChannelManagementController {
         throw new RuntimeException("Missing or invalid authorization header");
     }
     
-    /**
-     * Create channel in a team
-     * POST /api/teams/{teamId}/channels
-     * ADMIN, MANAGER: full access
-     * EMPLOYEE: only if team member
-     */
+    
     @PostMapping("/teams/{teamId}/channels")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Create channel", description = "Creates a channel in a team. ADMIN and MANAGER have full access. EMPLOYEE can create only if they are a team member.")
@@ -88,11 +77,7 @@ public class ChannelManagementController {
         }
     }
     
-    /**
-     * Get channels under a team
-     * GET /api/teams/{teamId}/channels
-     * All roles can view
-     */
+    
     @GetMapping("/teams/{teamId}/channels")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get team channels", description = "Retrieves all channels under a team. All roles can view.")
@@ -113,12 +98,7 @@ public class ChannelManagementController {
         }
     }
     
-    /**
-     * Add member to channel
-     * POST /api/channels/{channelId}/members
-     * ADMIN, MANAGER: full access
-     * EMPLOYEE: only if team member
-     */
+    
     @PostMapping("/channels/{channelId}/members")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Add channel member", description = "Adds a user to a channel. ADMIN and MANAGER have full access. EMPLOYEE can add only if they are a team member.")
@@ -148,12 +128,7 @@ public class ChannelManagementController {
         }
     }
     
-    /**
-     * Remove member from channel
-     * DELETE /api/channels/{channelId}/members/{userId}
-     * ADMIN, MANAGER: full access
-     * EMPLOYEE: only if team member
-     */
+    
     @DeleteMapping("/channels/{channelId}/members/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Remove channel member", description = "Removes a user from a channel. ADMIN and MANAGER have full access. EMPLOYEE can remove only if they are a team member.")
@@ -177,11 +152,7 @@ public class ChannelManagementController {
         }
     }
     
-    /**
-     * Get channel members
-     * GET /api/channels/{channelId}/members
-     * All roles can view
-     */
+    
     @GetMapping("/channels/{channelId}/members")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get channel members", description = "Retrieves all members of a channel. All roles can view.")

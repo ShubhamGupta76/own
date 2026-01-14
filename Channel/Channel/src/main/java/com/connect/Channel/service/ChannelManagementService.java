@@ -17,10 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Service for channel management operations
- * Handles channel creation, member management, and team membership validation
- */
+
 @Service
 @RequiredArgsConstructor
 public class ChannelManagementService {
@@ -32,14 +29,10 @@ public class ChannelManagementService {
     @Value("${team.service.url:http://localhost:8083}")
     private String teamServiceUrl;
     
-    /**
-     * Create a channel in a team
-     * ADMIN and MANAGER: full access
-     * EMPLOYEE: can create only if team member
-     */
+    
     @Transactional
     public ChannelResponse createChannel(Long teamId, CreateChannelRequest request, Long createdBy, Long organizationId, String role) {
-        // Validate team membership for EMPLOYEE role
+        
         if (role.equals("EMPLOYEE")) {
             if (!isTeamMember(teamId, createdBy, organizationId)) {
                 throw new RuntimeException("Access denied: You must be a team member to create channels");
@@ -48,12 +41,12 @@ public class ChannelManagementService {
             throw new RuntimeException("Access denied: Only ADMIN, MANAGER, and EMPLOYEE (team members) can create channels");
         }
         
-        // Check if channel name already exists in team
+        
         if (channelRepository.findByNameAndTeamId(request.getName(), teamId).isPresent()) {
             throw new RuntimeException("Channel with name '" + request.getName() + "' already exists in this team");
         }
         
-        // Validate channel type
+        
         Channel.ChannelType channelType;
         try {
             channelType = Channel.ChannelType.valueOf(request.getType().toUpperCase());
@@ -61,7 +54,7 @@ public class ChannelManagementService {
             throw new RuntimeException("Invalid channel type: " + request.getType());
         }
         
-        // Create channel
+        
         Channel channel = Channel.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -77,7 +70,7 @@ public class ChannelManagementService {
         
         channel = channelRepository.save(channel);
         
-        // Add creator as channel member
+      
         ChannelMember creator = ChannelMember.builder()
                 .channelId(channel.getId())
                 .userId(createdBy)
@@ -89,14 +82,10 @@ public class ChannelManagementService {
         return mapToChannelResponse(channel);
     }
     
-    /**
-     * Add a member to a channel
-     * ADMIN and MANAGER: full access
-     * EMPLOYEE: can add if team member
-     */
+    
     @Transactional
     public ChannelMemberResponse addChannelMember(Long channelId, Long userId, Long currentUserId, Long organizationId, String role) {
-        // Verify channel exists and belongs to organization
+        
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found"));
         
@@ -104,9 +93,9 @@ public class ChannelManagementService {
             throw new RuntimeException("Access denied: Channel does not belong to your organization");
         }
         
-        // Validate permissions
+       
         if (role.equals("EMPLOYEE")) {
-            // EMPLOYEE can add members only if they are team member
+            
             if (!isTeamMember(channel.getTeamId(), currentUserId, organizationId)) {
                 throw new RuntimeException("Access denied: You must be a team member to add channel members");
             }
@@ -114,12 +103,12 @@ public class ChannelManagementService {
             throw new RuntimeException("Access denied: Only ADMIN, MANAGER, and EMPLOYEE (team members) can add channel members");
         }
         
-        // Check if member already exists
+        
         if (channelMemberRepository.existsByChannelIdAndUserId(channelId, userId)) {
             throw new RuntimeException("User is already a member of this channel");
         }
         
-        // Create channel member
+       
         ChannelMember member = ChannelMember.builder()
                 .channelId(channelId)
                 .userId(userId)
@@ -131,14 +120,10 @@ public class ChannelManagementService {
         return mapToMemberResponse(member);
     }
     
-    /**
-     * Remove a member from a channel
-     * ADMIN and MANAGER: full access
-     * EMPLOYEE: can remove if team member
-     */
+    
     @Transactional
     public void removeChannelMember(Long channelId, Long userId, Long currentUserId, Long organizationId, String role) {
-        // Verify channel exists and belongs to organization
+       
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found"));
         
@@ -146,9 +131,9 @@ public class ChannelManagementService {
             throw new RuntimeException("Access denied: Channel does not belong to your organization");
         }
         
-        // Validate permissions
+       
         if (role.equals("EMPLOYEE")) {
-            // EMPLOYEE can remove members only if they are team member
+           
             if (!isTeamMember(channel.getTeamId(), currentUserId, organizationId)) {
                 throw new RuntimeException("Access denied: You must be a team member to remove channel members");
             }
@@ -156,16 +141,14 @@ public class ChannelManagementService {
             throw new RuntimeException("Access denied: Only ADMIN, MANAGER, and EMPLOYEE (team members) can remove channel members");
         }
         
-        // Find and remove member
+        
         ChannelMember member = channelMemberRepository.findByChannelIdAndUserId(channelId, userId)
                 .orElseThrow(() -> new RuntimeException("User is not a member of this channel"));
         
         channelMemberRepository.delete(member);
     }
     
-    /**
-     * Get channels under a team
-     */
+   
     @Transactional(readOnly = true)
     public List<ChannelResponse> getChannelsByTeam(Long teamId, Long organizationId) {
         // Verify team belongs to organization (call Team service or check locally)

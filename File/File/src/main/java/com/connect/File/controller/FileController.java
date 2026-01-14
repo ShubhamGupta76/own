@@ -25,7 +25,7 @@ import java.util.List;
  * Handles file upload, download, lock/unlock, and versioning
  */
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/api/v1/files")
 @RequiredArgsConstructor
 @Tag(name = "File Management", description = "File sharing and collaboration APIs")
 @SecurityRequirement(name = "bearerAuth")

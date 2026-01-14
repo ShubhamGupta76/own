@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,8 +24,9 @@ import java.util.Map;
  * ADMIN only endpoints
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "User Management", description = "Admin APIs for user management")
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
@@ -116,9 +118,11 @@ public class UserController {
             HttpServletRequest httpRequest) {
         try {
             Long adminId = getAdminId(httpRequest);
+            log.debug("Getting user {} by admin {}", id, adminId);
             User user = userService.getUserById(id, adminId);
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
+            log.error("Error getting user {}: {}", id, e.getMessage(), e);
             throw new RuntimeException(e.getMessage());
         }
     }

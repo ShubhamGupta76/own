@@ -14,14 +14,7 @@ import org.springframework.web.cors.reactive.CorsUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-/**
- * Custom CORS Filter for API Gateway
- * Handles CORS preflight and actual requests
- * 
- * NOTE: Disabled in favor of Spring Security CORS configuration
- * to avoid duplicate CORS headers
- */
-// @Component // Disabled - using Spring Security CORS config instead
+
 @Slf4j
 public class CorsFilter implements GlobalFilter, Ordered {
 
@@ -65,7 +58,7 @@ public class CorsFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        // Execute very early, before other filters
+        
         return -300;
     }
 }

@@ -12,21 +12,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 
-/**
- * Controller for team management operations
- * ADMIN and MANAGER can create/manage teams
- * All roles can view teams
- */
 @RestController
-@RequestMapping("/api/teams")
+@RequestMapping("/api/v1/teams")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Team Management", description = "Team creation and management APIs")
 @SecurityRequirement(name = "bearerAuth")
 public class TeamManagementController {
@@ -34,17 +35,29 @@ public class TeamManagementController {
     private final TeamManagementService teamManagementService;
     private final JwtUtil jwtUtil;
     
-    /**
-     * Extract user information from JWT token
-     */
     private Long getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
     
     private String getRole(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getAuthorities() != null) {
+            Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+            for (GrantedAuthority authority : authorities) {
+                String authorityName = authority.getAuthority();
+                if (authorityName.startsWith("ROLE_")) {
+                    String role = authorityName.substring(5);
+                    log.debug("Extracted role from SecurityContext: {}", role);
+                    return role;
+                }
+            }
+        }
+        
         String token = extractToken(request);
-        return jwtUtil.extractRole(token);
+        String role = jwtUtil.extractRole(token);
+        log.debug("Extracted role from token: {}", role);
+        return role;
     }
     
     private Long getOrganizationId(HttpServletRequest request) {
@@ -60,11 +73,6 @@ public class TeamManagementController {
         throw new RuntimeException("Missing or invalid authorization header");
     }
     
-    /**
-     * Create a new team
-     * POST /api/teams
-     * ADMIN and MANAGER only
-     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @Operation(summary = "Create team", description = "Creates a new team. Only ADMIN and MANAGER can create teams. Auto-creates 'General' channel.")
@@ -76,6 +84,13 @@ public class TeamManagementController {
             String role = getRole(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
+            log.debug("Creating team - UserId: {}, Role: {}, OrganizationId: {}", userId, role, organizationId);
+            
+            if (role == null || role.trim().isEmpty()) {
+                log.error("Role is null or empty when creating team. UserId: {}, OrganizationId: {}", userId, organizationId);
+                throw new RuntimeException("User role is missing from token");
+            }
+            
             if (organizationId == null) {
                 throw new RuntimeException("Organization not found");
             }
@@ -83,15 +98,11 @@ public class TeamManagementController {
             TeamResponse team = teamManagementService.createTeam(request, userId, organizationId, role);
             return ResponseEntity.status(HttpStatus.CREATED).body(team);
         } catch (RuntimeException e) {
+            log.error("Error creating team: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
     
-    /**
-     * Add member to team
-     * POST /api/teams/{teamId}/members
-     * ADMIN and MANAGER only
-     */
     @PostMapping("/{teamId}/members")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @Operation(summary = "Add team member", description = "Adds a user to a team. Only ADMIN and MANAGER can add members.")
@@ -114,11 +125,6 @@ public class TeamManagementController {
         }
     }
     
-    /**
-     * Remove member from team
-     * DELETE /api/teams/{teamId}/members/{userId}
-     * ADMIN and MANAGER only
-     */
     @DeleteMapping("/{teamId}/members/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @Operation(summary = "Remove team member", description = "Removes a user from a team. Only ADMIN and MANAGER can remove members. Cannot remove team owner.")
@@ -141,11 +147,6 @@ public class TeamManagementController {
         }
     }
     
-    /**
-     * Get all teams in organization
-     * GET /api/teams
-     * All roles can view
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get all teams", description = "Retrieves all active teams in the organization. All roles can view.")
@@ -164,11 +165,6 @@ public class TeamManagementController {
         }
     }
     
-    /**
-     * Get teams for logged-in user
-     * GET /api/teams/my
-     * All roles can view their own teams
-     */
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get my teams", description = "Retrieves teams where the logged-in user is a member. All roles can view.")

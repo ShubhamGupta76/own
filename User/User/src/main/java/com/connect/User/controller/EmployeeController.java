@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
  * Internal endpoint for Auth Service and employee profile endpoints
  */
 @RestController
-@RequestMapping("/api/employees")
+@RequestMapping("/api/v1/employees")
 @RequiredArgsConstructor
 @Tag(name = "Employee Management", description = "Employee login validation and profile management APIs")
 @SecurityRequirement(name = "bearerAuth")

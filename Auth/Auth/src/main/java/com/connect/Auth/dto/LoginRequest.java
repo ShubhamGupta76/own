@@ -6,9 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO for admin login request
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

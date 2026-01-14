@@ -21,7 +21,7 @@ import java.util.Map;
  * Handles notifications, activity feed, and real-time delivery
  */
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
 @Tag(name = "Notification Management", description = "Notification and activity feed APIs")
 @SecurityRequirement(name = "bearerAuth")

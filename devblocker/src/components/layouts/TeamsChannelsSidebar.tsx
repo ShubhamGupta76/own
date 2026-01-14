@@ -1,8 +1,3 @@
-/**
- * Teams & Channels Sidebar Component
- * Shows expandable teams with nested channels (like Microsoft Teams)
- */
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { HiChevronRight, HiChevronDown, HiPlus, HiHashtag, HiLockClosed } from 'react-icons/hi';
@@ -30,7 +25,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
   } = useTeam();
   const { role } = useAuth();
 
-  // Sync selection with URL params
   useEffect(() => {
     if (params.teamId && params.channelId) {
       const teamId = Number(params.teamId);
@@ -42,12 +36,10 @@ export const TeamsChannelsSidebar: React.FC = () => {
         if (team.id !== selectedTeam?.id) {
           selectTeam(team);
         }
-        // Ensure team is expanded
         if (!expandedTeams.has(teamId)) {
           toggleTeam(teamId);
         }
         
-        // Find and select channel
         const teamChannels = channels[teamId];
         if (teamChannels && teamChannels.length > 0) {
           const channel = teamChannels.find((c) => c.id === channelId);
@@ -55,12 +47,10 @@ export const TeamsChannelsSidebar: React.FC = () => {
             selectChannel(channel);
           }
         } else if (!channels[teamId] && !isLoading) {
-          // Fetch channels if not loaded
           refreshChannels(teamId);
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.teamId, params.channelId, teams.length, channels]);
   
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
@@ -71,26 +61,33 @@ export const TeamsChannelsSidebar: React.FC = () => {
   const [newChannelDescription, setNewChannelDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  // Check if user can create teams/channels
   const canCreateTeam = role === 'ADMIN' || role === 'MANAGER';
   const canCreateChannel = (role === 'ADMIN' || role === 'MANAGER' || role === 'EMPLOYEE');
+  
+  useEffect(() => {
+    if (role) {
+      console.debug('User role for team creation check:', role, 'canCreateTeam:', canCreateTeam);
+    }
+  }, [role, canCreateTeam]);
 
-  // Handle team click
   const handleTeamClick = (team: Team) => {
     toggleTeam(team.id);
     selectTeam(team);
   };
 
-  // Handle channel click
   const handleChannelClick = (channel: Channel) => {
     selectChannel(channel);
     navigate(`/app/teams/${channel.teamId}/channels/${channel.id}`);
   };
 
-  // Handle create team
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTeamName.trim()) return;
+
+    if (!canCreateTeam) {
+      alert('Only ADMIN and MANAGER roles can create teams');
+      return;
+    }
 
     setIsCreating(true);
     try {
@@ -100,13 +97,14 @@ export const TeamsChannelsSidebar: React.FC = () => {
       setNewTeamDescription('');
       navigate(`/app/teams/${team.id}`);
     } catch (err: any) {
-      alert(err.message || 'Failed to create team');
+      const errorMessage = err.message || 'Failed to create team';
+      console.error('Error creating team:', err);
+      alert(errorMessage);
     } finally {
       setIsCreating(false);
     }
   };
 
-  // Handle create channel
   const handleCreateChannel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newChannelName.trim() || !selectedTeam) return;
@@ -129,7 +127,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
     }
   };
 
-  // Sort channels - General first, then alphabetical
   const sortChannels = (channelsList: Channel[]): Channel[] => {
     return [...channelsList].sort((a, b) => {
       if (a.name.toLowerCase() === 'general') return -1;
@@ -148,7 +145,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
 
   return (
     <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
-      {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
@@ -166,7 +162,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Teams List */}
       <div className="flex-1 overflow-y-auto">
         {isLoading && teams.length === 0 ? (
           <div className="p-4 text-sm text-gray-500 text-center">Loading teams...</div>
@@ -186,7 +181,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
 
               return (
                 <div key={team.id} className="mb-1">
-                  {/* Team Header */}
                   <button
                     onClick={() => handleTeamClick(team)}
                     className={`
@@ -208,7 +202,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
                     </div>
                   </button>
 
-                  {/* Channels List */}
                   {isExpanded && (
                     <div className="ml-4 mt-1">
                       {teamChannels.length === 0 ? (
@@ -244,7 +237,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
                         })
                       )}
                       
-                      {/* Create Channel Button */}
                       {isSelected && canCreateChannel && (
                         <button
                           onClick={() => setShowCreateChannelModal(true)}
@@ -263,7 +255,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
         )}
       </div>
 
-      {/* Create Team Modal */}
       {showCreateTeamModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
@@ -320,7 +311,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
         </div>
       )}
 
-      {/* Create Channel Modal */}
       {showCreateChannelModal && selectedTeam && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/channels")
+@RequestMapping("/api/v1/channels")
 @RequiredArgsConstructor
 @Tag(name = "Channel Management", description = "Admin read-only APIs for viewing channels and permissions")
 @SecurityRequirement(name = "bearerAuth")

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/files/policies")
+@RequestMapping("/api/v1/files/policies")
 @RequiredArgsConstructor
 @Tag(name = "File Policy Management", description = "Admin APIs for controlling file sharing feature")
 @SecurityRequirement(name = "bearerAuth")
