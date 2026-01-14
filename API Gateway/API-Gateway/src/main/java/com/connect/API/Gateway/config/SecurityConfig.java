@@ -12,12 +12,7 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
-/**
- * Security Configuration for API Gateway
- * Since we're using GlobalFilter for JWT validation,
- * we disable default Spring Security authentication
- * and allow all requests (JWT filter handles authentication)
- */
+
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {

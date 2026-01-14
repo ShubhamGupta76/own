@@ -11,10 +11,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * Security configuration for User Service
- * Requires ADMIN role for all endpoints
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -29,7 +25,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/actuator/**").permitAll()
-                .requestMatchers("/api/employees/validate").permitAll() // Allow Auth Service to call this
+                .requestMatchers("/api/employees/validate").permitAll()
+                .requestMatchers("/api/organizations/admin/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

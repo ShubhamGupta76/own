@@ -19,10 +19,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Service for team management operations
- * Handles team creation, member management, and auto-creates General channel
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -35,19 +31,19 @@ public class TeamManagementService {
     @Value("${channel.service.url:http://localhost:8084}")
     private String channelServiceUrl;
     
-    /**
-     * Create a new team
-     * ADMIN and MANAGER can create teams
-     * Auto-creates "General" channel
-     */
     @Transactional
     public TeamResponse createTeam(CreateTeamRequest request, Long createdBy, Long organizationId, String role) {
-        // Validate role (only ADMIN and MANAGER can create teams)
-        if (!role.equals("ADMIN") && !role.equals("MANAGER")) {
-            throw new RuntimeException("Only ADMIN and MANAGER can create teams");
+        if (role == null || role.trim().isEmpty()) {
+            log.error("Role is null or empty when creating team. UserId: {}, OrganizationId: {}", createdBy, organizationId);
+            throw new RuntimeException("User role is missing");
         }
         
-        // Create team
+        String normalizedRole = role.trim().toUpperCase();
+        if (!normalizedRole.equals("ADMIN") && !normalizedRole.equals("MANAGER")) {
+            log.warn("User with role '{}' attempted to create team. UserId: {}, OrganizationId: {}", role, createdBy, organizationId);
+            throw new RuntimeException("Only ADMIN and MANAGER roles can create teams");
+        }
+        
         Team team = Team.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -58,7 +54,6 @@ public class TeamManagementService {
         
         team = teamRepository.save(team);
         
-        // Add creator as team owner
         TeamMember owner = TeamMember.builder()
                 .teamId(team.getId())
                 .userId(createdBy)
@@ -68,30 +63,22 @@ public class TeamManagementService {
         
         teamMemberRepository.save(owner);
         
-        // Auto-create "General" channel
         try {
             createGeneralChannel(team.getId(), organizationId);
             log.info("General channel created for team: {}", team.getId());
         } catch (Exception e) {
             log.error("Failed to create General channel for team {}: {}", team.getId(), e.getMessage());
-            // Don't fail team creation if channel creation fails
         }
         
         return mapToTeamResponse(team);
     }
     
-    /**
-     * Add a member to a team
-     * ADMIN and MANAGER can add members
-     */
     @Transactional
     public TeamMemberResponse addTeamMember(Long teamId, AddTeamMemberRequest request, Long organizationId, String role) {
-        // Validate role (only ADMIN and MANAGER can add members)
         if (!role.equals("ADMIN") && !role.equals("MANAGER")) {
             throw new RuntimeException("Only ADMIN and MANAGER can add team members");
         }
         
-        // Verify team exists and belongs to organization
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
         
@@ -99,12 +86,10 @@ public class TeamManagementService {
             throw new RuntimeException("Access denied: Team does not belong to your organization");
         }
         
-        // Check if member already exists
         if (teamMemberRepository.existsByTeamIdAndUserId(teamId, request.getUserId())) {
             throw new RuntimeException("User is already a member of this team");
         }
         
-        // Validate member role
         TeamMember.MemberRole memberRole;
         try {
             memberRole = TeamMember.MemberRole.valueOf(request.getRole().toUpperCase());
@@ -112,7 +97,6 @@ public class TeamManagementService {
             throw new RuntimeException("Invalid member role: " + request.getRole());
         }
         
-        // Create team member
         TeamMember member = TeamMember.builder()
                 .teamId(teamId)
                 .userId(request.getUserId())
@@ -125,18 +109,12 @@ public class TeamManagementService {
         return mapToMemberResponse(member);
     }
     
-    /**
-     * Remove a member from a team
-     * ADMIN and MANAGER can remove members
-     */
     @Transactional
     public void removeTeamMember(Long teamId, Long userId, Long organizationId, String role) {
-        // Validate role (only ADMIN and MANAGER can remove members)
         if (!role.equals("ADMIN") && !role.equals("MANAGER")) {
             throw new RuntimeException("Only ADMIN and MANAGER can remove team members");
         }
         
-        // Verify team exists and belongs to organization
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
         
@@ -144,11 +122,9 @@ public class TeamManagementService {
             throw new RuntimeException("Access denied: Team does not belong to your organization");
         }
         
-        // Find and remove member
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
                 .orElseThrow(() -> new RuntimeException("User is not a member of this team"));
         
-        // Prevent removing the team owner
         if (member.getRole() == TeamMember.MemberRole.OWNER) {
             throw new RuntimeException("Cannot remove team owner");
         }
@@ -156,10 +132,6 @@ public class TeamManagementService {
         teamMemberRepository.delete(member);
     }
     
-    /**
-     * Get all teams in organization
-     * All roles can view teams
-     */
     @Transactional(readOnly = true)
     public List<TeamResponse> getAllTeams(Long organizationId) {
         List<Team> teams = teamRepository.findByOrganizationIdAndActiveTrue(organizationId);
@@ -169,15 +141,10 @@ public class TeamManagementService {
                 .collect(Collectors.toList());
     }
     
-    /**
-     * Get teams for logged-in user
-     * Returns teams where user is a member
-     */
     @Transactional(readOnly = true)
     public List<TeamResponse> getMyTeams(Long userId, Long organizationId) {
         List<TeamMember> memberships = teamMemberRepository.findByUserId(userId);
         
-        // Filter by organization and get teams
         return memberships.stream()
                 .filter(m -> m.getOrganizationId().equals(organizationId))
                 .map(m -> teamRepository.findById(m.getTeamId()))
@@ -188,27 +155,17 @@ public class TeamManagementService {
                 .collect(Collectors.toList());
     }
     
-    /**
-     * Check if user is member of team
-     */
     @Transactional(readOnly = true)
     public boolean isTeamMember(Long teamId, Long userId) {
         return teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
     }
     
-    /**
-     * Get team by ID (for validation)
-     */
     @Transactional(readOnly = true)
     public Team getTeamById(Long teamId) {
         return teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
     }
     
-    /**
-     * Create General channel for a team
-     * Calls Channel Service to create the channel
-     */
     private void createGeneralChannel(Long teamId, Long organizationId) {
         try {
             java.util.Map<String, Object> channelRequest = new java.util.HashMap<>();
@@ -233,9 +190,6 @@ public class TeamManagementService {
         }
     }
     
-    /**
-     * Map Team entity to TeamResponse DTO
-     */
     private TeamResponse mapToTeamResponse(Team team) {
         List<TeamMember> members = teamMemberRepository.findByTeamId(team.getId());
         List<TeamMemberResponse> memberResponses = members.stream()
@@ -254,9 +208,6 @@ public class TeamManagementService {
                 .build();
     }
     
-    /**
-     * Map TeamMember entity to TeamMemberResponse DTO
-     */
     private TeamMemberResponse mapToMemberResponse(TeamMember member) {
         return TeamMemberResponse.builder()
                 .id(member.getId())

@@ -17,10 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Controller for chat operations
- * Employee-only endpoints for sending and receiving messages
- */
+
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor

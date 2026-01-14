@@ -11,9 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Function;
 
-/**
- * Utility class for JWT token validation
- */
 @Component
 public class JwtUtil {
     
@@ -52,9 +49,19 @@ public class JwtUtil {
     
     public String extractRole(String token) {
         return extractClaim(token, claims -> {
-            Object role = claims.get("role");
-            if (role == null) return null;
-            return role.toString();
+            try {
+                String role = claims.get("role", String.class);
+                if (role != null && !role.isEmpty()) {
+                    return role;
+                }
+            } catch (Exception e) {
+            }
+            
+            Object roleObj = claims.get("role");
+            if (roleObj == null) {
+                return null;
+            }
+            return roleObj.toString();
         });
     }
     

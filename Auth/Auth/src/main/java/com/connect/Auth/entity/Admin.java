@@ -8,10 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * Admin entity for storing admin credentials
- * Only ADMIN role users are stored here
- */
+
 @Entity
 @Table(name = "admins")
 @Data
@@ -37,11 +34,11 @@ public class Admin {
     private String lastName;
     
     @Column(name = "organization_id")
-    private Long organizationId; // Set after organization creation
+    private Long organizationId; 
     
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Role role = Role.ADMIN; // Always ADMIN for this service
+    private Role role = Role.ADMIN; 
     
     @Column(nullable = false)
     private Boolean active = true;

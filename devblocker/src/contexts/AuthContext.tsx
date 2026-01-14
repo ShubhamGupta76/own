@@ -1,8 +1,3 @@
-/**
- * Authentication Context
- * Manages authentication state and JWT token
- */
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { decodeJWT, getToken, setToken, removeToken, isTokenExpired } from '../config/api';
@@ -35,9 +30,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setTokenState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  /**
-   * Refresh user profile
-   */
   const refreshUser = useCallback(async (): Promise<void> => {
     const storedToken = getToken();
     if (!storedToken) {
@@ -49,20 +41,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
-    // Try to get user by ID from token (only if we have organizationId)
-    if (decoded.userId && decoded.organizationId && decoded.organizationId > 0) {
+    if (decoded.role === 'ADMIN' && decoded.userId && decoded.organizationId && decoded.organizationId > 0) {
       try {
         const userProfile = await userApi.getUserById(decoded.userId);
         setUser(userProfile);
         return;
-      } catch (error) {
-        // If getUserById fails (e.g., 403 if not ADMIN), fall through to token-based user
-        console.warn('Could not fetch user profile, using token data:', error);
+      } catch (error: any) {
+        const status = error.response?.status;
+        const errorMessage = error.response?.data?.message || error.message || '';
+        
+        if (status === 404 || 
+            status === 400 && (errorMessage.toLowerCase().includes('not found') || 
+                               errorMessage.toLowerCase().includes('does not exist'))) {
+          console.debug('User not found in User service, using token data');
+        } else if (status === 403) {
+          console.debug('Access denied to user profile, using token data');
+        } else {
+          console.warn('Could not fetch user profile, using token data:', status || errorMessage);
+        }
       }
     }
-
-    // Don't try the /users/profile endpoint - it doesn't exist
-    // Just construct user from token
     const basicUser: User = {
       id: decoded.userId,
       email: decoded.email,
@@ -74,7 +72,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(basicUser);
   }, []);
 
-  // Initialize auth state from localStorage
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = getToken();
@@ -88,10 +85,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setTokenState(null);
           setUser(null);
         }
-      } else {
-        if (storedToken) {
-          removeToken(); // Remove expired token
-        }
+        } else {
+          if (storedToken) {
+            removeToken();
+          }
         setTokenState(null);
         setUser(null);
       }
@@ -101,17 +98,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, [refreshUser]);
 
-  /**
-   * Register (Admin)
-   */
   const register = useCallback(async (data: RegisterRequest): Promise<void> => {
     try {
       const response = await authApi.register(data);
       setTokenState(response.token);
       
-      // After registration, create a user object from the response
-      // We don't fetch profile since /users/profile doesn't exist and
-      // user might not have organizationId yet
       const basicUser: User = {
         id: response.userId,
         email: response.email,
@@ -129,9 +120,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  /**
-   * Login (Admin/Manager)
-   */
   const login = useCallback(async (credentials: LoginRequest): Promise<{ role: UserRole; isFirstLogin?: boolean; profileSetupRequired?: boolean }> => {
     try {
       const response = await authApi.login(credentials);
@@ -159,9 +147,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [refreshUser]);
 
-  /**
-   * Employee Login
-   */
   const employeeLogin = useCallback(async (credentials: LoginRequest): Promise<{ role: UserRole; isFirstLogin?: boolean; profileSetupRequired?: boolean }> => {
     try {
       const response = await authApi.employeeLogin(credentials);
@@ -189,9 +174,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [refreshUser]);
 
-  /**
-   * Organization Login
-   */
   const organizationLogin = useCallback(async (credentials: LoginRequest): Promise<{ role: UserRole; isFirstLogin?: boolean; profileSetupRequired?: boolean }> => {
     try {
       const response = await authApi.organizationLogin(credentials);
@@ -219,24 +201,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [refreshUser]);
 
-  /**
-   * Logout
-   */
   const logout = useCallback((): void => {
     authApi.logout();
     setTokenState(null);
     setUser(null);
   }, []);
 
-  /**
-   * Get redirect path based on role and setup status
-   */
   const getRedirectPath = useCallback((userRole: UserRole | null, isFirstLogin?: boolean, profileSetupRequired?: boolean): string => {
     if (!userRole) {
       return '/login';
     }
 
-    // Handle first login / onboarding flows
     if (isFirstLogin || profileSetupRequired) {
       switch (userRole) {
         case 'ADMIN':
@@ -251,10 +226,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }
 
-    // Handle normal redirects based on role
     switch (userRole) {
       case 'ADMIN':
-        return '/app/teams'; // Redirect to teams page instead of admin dashboard for now
+        return '/app/teams';
       case 'MANAGER':
       case 'EMPLOYEE':
         return '/app/teams';
@@ -265,7 +239,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Decode role from token
   const decoded: JWTPayload | null = token ? decodeJWT(token) : null;
   const role = decoded?.role || user?.role || null;
 
@@ -287,9 +260,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * Hook to use auth context
- */
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {

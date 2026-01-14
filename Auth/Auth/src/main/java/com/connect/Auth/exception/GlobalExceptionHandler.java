@@ -12,16 +12,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Global exception handler for Auth Service
- */
+
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
     
-    /**
-     * Handle validation errors
-     */
+   
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<AuthResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -40,9 +36,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     
-    /**
-     * Handle runtime exceptions
-     */
+   
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<AuthResponse> handleRuntimeException(RuntimeException ex) {
         log.error("Runtime exception: {}", ex.getMessage(), ex);
@@ -52,9 +46,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     
-    /**
-     * Handle all other exceptions
-     */
+    
     @ExceptionHandler(Exception.class)
     public ResponseEntity<AuthResponse> handleException(Exception ex) {
         log.error("Unexpected exception: {}", ex.getMessage(), ex);
