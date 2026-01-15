@@ -39,7 +39,8 @@ public class GlobalExceptionHandler {
                        lowerMessage.contains("unauthorized") ||
                        lowerMessage.contains("can only access") ||
                        lowerMessage.contains("can only manage") ||
-                       lowerMessage.contains("only admin and manager")) {
+                       lowerMessage.contains("only admin and manager") ||
+                       lowerMessage.contains("organization context is missing")) {
                 status = HttpStatus.FORBIDDEN;
                 error = "Forbidden";
                 log.debug("Mapped to 403 Forbidden: {}", message);

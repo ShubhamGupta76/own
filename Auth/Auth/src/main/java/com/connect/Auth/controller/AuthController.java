@@ -69,20 +69,18 @@ public class AuthController {
     }
 
     @PostMapping("/admin/organization-id")
-    @Operation(summary = "Update admin organizationId", description = "Internal endpoint called by User Service to sync organizationId after organization creation.")
-    public ResponseEntity<Map<String, String>> updateAdminOrganizationId(@RequestBody Map<String, Object> request) {
+    @Operation(summary = "Update admin organizationId", description = "Internal endpoint called by User Service to sync organizationId after organization creation. Returns new JWT token with updated organizationId.")
+    public ResponseEntity<AuthResponse> updateAdminOrganizationId(@RequestBody Map<String, Object> request) {
         try {
             Long adminId = Long.valueOf(request.get("adminId").toString());
             Long organizationId = Long.valueOf(request.get("organizationId").toString());
             
-            authService.updateOrganizationId(adminId, organizationId);
-            
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Organization ID updated successfully");
+            AuthResponse response = authService.updateOrganizationIdAndGetToken(adminId, organizationId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", e.getMessage());
+            AuthResponse errorResponse = AuthResponse.builder()
+                    .message(e.getMessage())
+                    .build();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }

@@ -46,16 +46,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = jwtUtil.extractUserId(token);
                 
                 // Set authentication context
+                String authority = "ROLE_" + role;
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         email,
                         null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                        Collections.singletonList(new SimpleGrantedAuthority(authority))
                 );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                
+                // Debug logging
+                System.out.println("JWT Filter: Set authentication for user: " + email + ", role: " + role + ", authority: " + authority);
+                System.out.println("JWT Filter: SecurityContext authentication: " + SecurityContextHolder.getContext().getAuthentication());
+            } else {
+                System.out.println("JWT Filter: Token validation failed");
             }
         } catch (Exception e) {
             // Token validation failed, continue without authentication
+            System.out.println("JWT Filter: Exception during token validation: " + e.getMessage());
+            System.out.println("JWT Filter: Exception type: " + e.getClass().getName());
+            e.printStackTrace();
         }
         
         filterChain.doFilter(request, response);

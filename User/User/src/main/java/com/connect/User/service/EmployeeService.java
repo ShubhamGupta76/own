@@ -65,6 +65,14 @@ public class EmployeeService {
                     .build();
         }
         
+        // CRITICAL: EMPLOYEE users MUST have organizationId assigned
+        if (user.getOrganizationId() == null || user.getOrganizationId() == 0) {
+            return EmployeeValidationResponse.builder()
+                    .isValid(false)
+                    .message("Employee account is not assigned to an organization. Please contact your administrator.")
+                    .build();
+        }
+        
         return EmployeeValidationResponse.builder()
                 .userId(user.getId())
                 .email(user.getEmail())

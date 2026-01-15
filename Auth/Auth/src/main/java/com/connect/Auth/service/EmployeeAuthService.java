@@ -47,7 +47,12 @@ public class EmployeeAuthService {
                     validationResponse.getMessage() : "Invalid email or password");
         }
         
-       
+        // CRITICAL: EMPLOYEE users MUST have organizationId assigned
+        if ("EMPLOYEE".equalsIgnoreCase(validationResponse.getRole()) && 
+            (validationResponse.getOrganizationId() == null || validationResponse.getOrganizationId() == 0)) {
+            throw new RuntimeException("Employee account is not assigned to an organization. Please contact your administrator.");
+        }
+        
         String roleString = validationResponse.getRole(); 
         String token = jwtUtil.generateToken(
                 validationResponse.getUserId(),
@@ -60,7 +65,7 @@ public class EmployeeAuthService {
                 .token(token)
                 .userId(validationResponse.getUserId())
                 .email(validationResponse.getEmail())
-                .role(roleString) // "EMPLOYEE" string
+                .role(roleString) 
                 .organizationId(validationResponse.getOrganizationId())
                 .message("Login successful")
                 .build();

@@ -61,6 +61,7 @@ apiClient.interceptors.response.use(
 // Export all API services
 export { authApi } from './auth.api';
 export { userApi } from './user.api';
+export { organizationApi } from './organization.api';
 export { teamsApi } from './team.api';
 export { channelsApi } from './channel.api';
 export { chatApi } from './chat.api';

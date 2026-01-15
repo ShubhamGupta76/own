@@ -18,7 +18,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   allowedRoles,
 }) => {
-  const { isAuthenticated, role, isLoading } = useAuth();
+  const { isAuthenticated, role, user, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -31,6 +31,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Redirect ADMIN users without organizationId to onboarding
+  // Skip this check if already on onboarding page
+  if (role === 'ADMIN' && 
+      (!user?.organizationId || user.organizationId === 0) &&
+      location.pathname !== '/admin/onboarding') {
+    return <Navigate to="/admin/onboarding" replace />;
   }
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {

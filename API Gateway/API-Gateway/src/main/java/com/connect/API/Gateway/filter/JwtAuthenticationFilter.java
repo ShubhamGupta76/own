@@ -60,6 +60,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         }
 
         String token = authHeader.substring(BEARER_PREFIX.length());
+        // Remove quotes if present (Postman sometimes adds quotes to variables)
+        token = token.trim().replaceAll("^\"|\"$", "");
         log.info("Extracted token length: {}", token.length());
         log.info("Token preview: {}...", token.length() > 20 ? token.substring(0, 20) : token);
 
@@ -88,6 +90,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             if (role == null || role.isEmpty()) {
                 log.warn("JWT token missing role claim");
                 return onError(exchange, "Invalid token: missing role information", HttpStatus.UNAUTHORIZED);
+            }
+
+            // CRITICAL: EMPLOYEE and MANAGER roles MUST have organizationId
+            // ADMIN users may not have organizationId initially (before creating organization)
+            // But most service endpoints require organizationId, so they'll get appropriate errors from services
+            if (("EMPLOYEE".equalsIgnoreCase(role) || "MANAGER".equalsIgnoreCase(role)) && 
+                (organizationId == null || organizationId == 0)) {
+                log.warn("JWT token missing organizationId for role: {}", role);
+                return onError(exchange, "Invalid token: missing organization context for " + role + " role", HttpStatus.FORBIDDEN);
             }
 
            

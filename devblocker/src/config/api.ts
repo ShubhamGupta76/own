@@ -29,6 +29,12 @@ export const API_CONFIG = {
       USERS: '/users',
     },
     
+    // Organization
+    ORGANIZATION: {
+      CREATE: '/organizations',
+      MY_ORGANIZATION: '/organizations/my-organization',
+    },
+    
     // Teams
     TEAMS: {
       LIST: '/teams',

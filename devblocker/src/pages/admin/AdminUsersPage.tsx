@@ -4,23 +4,38 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import type { User } from '../../types/api';
+import { userApi } from '../../api';
 
 export const AdminUsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    role: 'EMPLOYEE',
+    password: '',
+  });
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setIsLoading(true);
-        // TODO: Implement getUsers API call
-        // const fetchedUsers = await userApi.getUsers();
-        // setUsers(fetchedUsers);
-        setUsers([]);
+        setError('');
+        const fetchedUsers = await userApi.getUsers();
+        setUsers(fetchedUsers);
       } catch (err: any) {
-        setError(err.message || 'Failed to load users');
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to load users';
+        setError(errorMessage);
+        console.error('Error fetching users:', err);
       } finally {
         setIsLoading(false);
       }
@@ -28,6 +43,53 @@ export const AdminUsersPage: React.FC = () => {
 
     fetchUsers();
   }, []);
+
+  const handleCreateUser = async (e: FormEvent) => {
+    e.preventDefault();
+    setCreateError('');
+    setIsCreating(true);
+
+    try {
+      // Validate password for EMPLOYEE role
+      if (formData.role === 'EMPLOYEE' && (!formData.password || formData.password.length < 8)) {
+        setCreateError('Password is required for EMPLOYEE role and must be at least 8 characters');
+        setIsCreating(false);
+        return;
+      }
+
+      const newUser = await userApi.createUser({
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        role: formData.role,
+        password: formData.role === 'EMPLOYEE' ? formData.password : undefined,
+      });
+
+      // Add new user to list
+      setUsers([...users, newUser]);
+      
+      // Reset form and close modal
+      setFormData({
+        email: '',
+        firstName: '',
+        lastName: '',
+        role: 'EMPLOYEE',
+        password: '',
+      });
+      setShowCreateModal(false);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create user';
+      setCreateError(errorMessage);
+      console.error('Error creating user:', err);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   if (isLoading) {
     return (
@@ -46,7 +108,14 @@ export const AdminUsersPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Users Management</h1>
           <p className="text-gray-600">Manage organization users and permissions</p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <button 
+          onClick={() => {
+            console.log('Add User button clicked');
+            setShowCreateModal(true);
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+          type="button"
+        >
           Add User
         </button>
       </div>
@@ -115,6 +184,168 @@ export const AdminUsersPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          style={{ zIndex: 9999 }}
+          onClick={(e) => {
+            // Close modal when clicking outside
+            if (e.target === e.currentTarget) {
+              setShowCreateModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Create New User</h2>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setCreateError('');
+                  setFormData({
+                    email: '',
+                    firstName: '',
+                    lastName: '',
+                    role: 'EMPLOYEE',
+                    password: '',
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {createError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800">{createError}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="user@example.com"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                  Role *
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+
+              {formData.role === 'EMPLOYEE' && (
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Password * (for EMPLOYEE login)
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Minimum 8 characters"
+                    minLength={8}
+                    required={formData.role === 'EMPLOYEE'}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Password must be at least 8 characters long</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setCreateError('');
+                    setFormData({
+                      email: '',
+                      firstName: '',
+                      lastName: '',
+                      role: 'EMPLOYEE',
+                      password: '',
+                    });
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCreating ? 'Creating...' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

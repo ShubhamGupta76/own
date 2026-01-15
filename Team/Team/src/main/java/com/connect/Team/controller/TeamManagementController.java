@@ -91,8 +91,9 @@ public class TeamManagementController {
                 throw new RuntimeException("User role is missing from token");
             }
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                log.error("Missing organizationId for userId: {}, role: {} in createTeam", userId, role);
+                throw new RuntimeException("Access denied: Organization context is missing. Only users with an assigned organization can create teams.");
             }
             
             TeamResponse team = teamManagementService.createTeam(request, userId, organizationId, role);
@@ -153,14 +154,17 @@ public class TeamManagementController {
     public ResponseEntity<List<TeamResponse>> getAllTeams(HttpServletRequest httpRequest) {
         try {
             Long organizationId = getOrganizationId(httpRequest);
+            String role = getRole(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                log.error("Missing organizationId for role: {} in getAllTeams", role);
+                throw new RuntimeException("Access denied: Organization context is missing. Please contact your administrator.");
             }
             
             List<TeamResponse> teams = teamManagementService.getAllTeams(organizationId);
             return ResponseEntity.ok(teams);
         } catch (RuntimeException e) {
+            log.error("Error in getAllTeams: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -172,14 +176,17 @@ public class TeamManagementController {
         try {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
+            String role = getRole(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                log.error("Missing organizationId for userId: {}, role: {} in getMyTeams", userId, role);
+                throw new RuntimeException("Access denied: Organization context is missing. Please contact your administrator.");
             }
             
             List<TeamResponse> teams = teamManagementService.getMyTeams(userId, organizationId);
             return ResponseEntity.ok(teams);
         } catch (RuntimeException e) {
+            log.error("Error in getMyTeams: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }

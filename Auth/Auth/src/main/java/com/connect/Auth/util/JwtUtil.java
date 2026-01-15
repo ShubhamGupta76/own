@@ -17,7 +17,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
     
-    @Value("${jwt.secret:DevBlockerSecretKeyForJWTTokenGeneration123456789}")
+    @Value("${jwt.secret:DevBlockerSecretKeyForJWTTokenGeneration123456789012345678901234567890}")
     private String secret;
     
     @Value("${jwt.expiration:86400000}") 

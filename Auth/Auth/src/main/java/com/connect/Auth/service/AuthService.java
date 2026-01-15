@@ -85,4 +85,27 @@ public class AuthService {
                 admin.setOrganizationId(organizationId);
                 adminRepository.save(admin);
         }
+
+        @Transactional
+        public AuthResponse updateOrganizationIdAndGetToken(Long adminId, Long organizationId) {
+                Admin admin = adminRepository.findById(adminId)
+                                .orElseThrow(() -> new RuntimeException("Admin not found"));
+                admin.setOrganizationId(organizationId);
+                admin = adminRepository.save(admin);
+
+                String token = jwtUtil.generateToken(
+                                admin.getId(),
+                                admin.getEmail(),
+                                admin.getRole().name(),
+                                admin.getOrganizationId());
+
+                return AuthResponse.builder()
+                                .token(token)
+                                .userId(admin.getId())
+                                .email(admin.getEmail())
+                                .role(admin.getRole().name())
+                                .organizationId(admin.getOrganizationId())
+                                .message("Organization ID updated successfully")
+                                .build();
+        }
 }

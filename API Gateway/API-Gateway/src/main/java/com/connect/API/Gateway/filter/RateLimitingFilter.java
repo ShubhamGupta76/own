@@ -16,11 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * In-memory rate limiting filter for API Gateway
- * Uses token bucket algorithm
- * For production, consider using Redis-based rate limiting
- */
+
 @Component
 @Slf4j
 public class RateLimitingFilter extends AbstractGatewayFilterFactory<RateLimitingFilter.Config> {
@@ -95,7 +91,7 @@ public class RateLimitingFilter extends AbstractGatewayFilterFactory<RateLimitin
     }
 
     public static class Config {
-        // Configuration properties if needed
+        
     }
 }
 
