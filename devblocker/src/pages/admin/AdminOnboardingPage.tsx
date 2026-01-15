@@ -4,20 +4,84 @@
  * Route: /admin/onboarding
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { decodeJWT, getToken } from '../../config/api';
+import { organizationApi } from '../../api/organization.api';
 
 export const AdminOnboardingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, setToken } = useAuth();
   
   const [step, setStep] = useState(1);
   const [organizationName, setOrganizationName] = useState('');
   const [organizationDescription, setOrganizationDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [adminEmail, setAdminEmail] = useState<string>('');
+
+  // Check if organization already exists and redirect if it does
+  useEffect(() => {
+    const checkExistingOrganization = async () => {
+      try {
+        const org = await organizationApi.getMyOrganization();
+        if (org && org.id) {
+          // Organization exists, but token might not have organizationId
+          // Force token refresh by logging in again
+          const token = getToken();
+          if (token) {
+            const decoded = decodeJWT(token);
+            if (decoded?.email) {
+              // Try to get a fresh token - for now, just refresh user
+              await refreshUser();
+              // If still no organizationId, redirect to login to get fresh token
+              const newDecoded = decodeJWT(getToken() || '');
+              if (!newDecoded?.organizationId || newDecoded.organizationId === 0) {
+                // Token still doesn't have organizationId, need to login again
+                navigate('/login', { replace: true });
+              } else {
+                // Token has organizationId now, go to dashboard
+                navigate('/app/admin/dashboard', { replace: true });
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        // Organization doesn't exist yet (404) - this is expected during onboarding
+        // Only log unexpected errors
+        const status = err.response?.status;
+        if (status && status !== 404 && status !== 403) {
+          console.error('Error checking organization:', err);
+        }
+        // Silently continue with onboarding for 404 (org doesn't exist) and 403 (not authorized yet)
+      }
+    };
+
+    checkExistingOrganization();
+  }, [navigate, refreshUser]);
+
+  // Get admin email from JWT token or user context
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      const decoded = decodeJWT(token);
+      if (decoded?.email) {
+        setAdminEmail(decoded.email);
+      } else if (user?.email) {
+        setAdminEmail(user.email);
+      } else {
+        // Fallback to localStorage
+        const storedEmail = localStorage.getItem('user_email');
+        if (storedEmail) {
+          setAdminEmail(storedEmail);
+        }
+      }
+    } else if (user?.email) {
+      setAdminEmail(user.email);
+    }
+  }, [user]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -25,12 +89,47 @@ export const AdminOnboardingPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Call API to update organization details
-      // For now, just refresh user and redirect
+      // Create organization via API
+      const response = await organizationApi.createOrganization({
+        name: organizationName,
+        domain: undefined, // Optional domain can be added later
+      });
+
+      // Token is automatically updated by organizationApi.createOrganization
+      // Update token state in AuthContext
+      if (response.token) {
+        setToken(response.token);
+      }
+      
+      // Small delay to ensure token is stored
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Refresh user context to get updated organizationId
       await refreshUser();
+      
       navigate('/app/admin/dashboard', { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Failed to complete onboarding. Please try again.');
+      let errorMessage = 'Failed to create organization. Please try again.';
+      
+      if (err.response?.data) {
+        errorMessage = err.response.data.message || 
+                      err.response.data.error || 
+                      err.message || 
+                      errorMessage;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Provide more helpful error messages
+      if (err.response?.status === 500) {
+        errorMessage = 'Server error while creating organization. Please check that all services are running and try again.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'Access denied. Please ensure you are logged in as an admin.';
+      } else if (err.response?.status === 400) {
+        errorMessage = errorMessage || 'Invalid organization data. Please check your input and try again.';
+      }
+      
+      setError(errorMessage);
       console.error('Onboarding error:', err);
     } finally {
       setIsLoading(false);
@@ -140,7 +239,7 @@ export const AdminOnboardingPage: React.FC = () => {
                   )}
                   <div>
                     <span className="text-sm font-medium text-gray-500">Admin Email</span>
-                    <p className="text-gray-900">{user?.email}</p>
+                    <p className="text-gray-900">{adminEmail || user?.email || 'Loading...'}</p>
                   </div>
                 </div>
               </div>

@@ -18,7 +18,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
     
-    @Value("${jwt.secret:DevBlockerSecretKeyForJWTTokenGeneration123456789}")
+    @Value("${jwt.secret:DevBlockerSecretKeyForJWTTokenGeneration123456789012345678901234567890}")
     private String secret;
     
     /**
@@ -108,12 +108,21 @@ public class JwtUtil {
     }
     
     /**
-     * Validate token
+     * Validate token signature and expiration
      */
     public Boolean validateToken(String token) {
         try {
-            return !isTokenExpired(token);
+            // Verify token signature by parsing (this will throw if signature is invalid)
+            extractAllClaims(token);
+            // Check if token is expired
+            boolean notExpired = !isTokenExpired(token);
+            if (!notExpired) {
+                System.out.println("JWT Util: Token is expired");
+            }
+            return notExpired;
         } catch (Exception e) {
+            System.out.println("JWT Util: Token validation exception: " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

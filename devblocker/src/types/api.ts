@@ -60,6 +60,16 @@ export interface OrganizationRegistrationRequest {
   description?: string;
 }
 
+export interface Organization {
+  id: number;
+  name: string;
+  domain?: string;
+  adminId: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 // Team & Channel Types
 export interface Team {
   id: number;

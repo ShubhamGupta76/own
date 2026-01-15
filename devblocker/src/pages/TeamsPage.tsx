@@ -24,16 +24,11 @@ export const TeamsPage: React.FC = () => {
   // Fetch teams on mount
   useEffect(() => {
     const fetchTeams = async () => {
-      // Check if user has organizationId
-      if (!user?.organizationId || user.organizationId === 0) {
-        setError('Please create an organization first to access teams.');
-        setIsLoading(false);
-        return;
-      }
-
       try {
         setIsLoading(true);
         setError('');
+        
+        // Try to fetch teams - let the API handle organizationId validation
         const teamList = await teamsApi.getMyTeams();
         setTeams(teamList);
 
@@ -51,8 +46,13 @@ export const TeamsPage: React.FC = () => {
         }
       } catch (err: any) {
         const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
-        if (errorMessage?.includes('Organization not found') || errorMessage?.includes('organization')) {
-          setError('Please create an organization first to access teams.');
+        const status = err.response?.status;
+        
+        // Handle specific error cases
+        if (status === 403) {
+          setError('Access denied: ' + (errorMessage || 'You do not have permission to access teams.'));
+        } else if (errorMessage?.includes('Organization') || errorMessage?.includes('organization context')) {
+          setError('Organization context is missing. Please contact your administrator.');
         } else {
           setError(errorMessage || 'Failed to load teams');
         }
@@ -62,8 +62,10 @@ export const TeamsPage: React.FC = () => {
       }
     };
 
-    fetchTeams();
-  }, [teamId, user?.organizationId]);
+    if (user) {
+      fetchTeams();
+    }
+  }, [teamId, user]);
 
   // Fetch channels when team is selected
   const fetchChannels = async (teamId: number) => {

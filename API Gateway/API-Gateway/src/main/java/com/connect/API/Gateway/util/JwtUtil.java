@@ -20,7 +20,7 @@ import java.util.function.Function;
 @Slf4j
 public class JwtUtil {
     
-    @Value("${jwt.secret:DevBlockerSecretKeyForJWTTokenGeneration123456789}")
+    @Value("${jwt.secret:DevBlockerSecretKeyForJWTTokenGeneration123456789012345678901234567890}")
     private String secret;
     
     /**

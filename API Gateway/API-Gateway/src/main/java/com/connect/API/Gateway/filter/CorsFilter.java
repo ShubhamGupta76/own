@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 
 
 @Slf4j
+@Component
 public class CorsFilter implements GlobalFilter, Ordered {
 
     private static final String ALLOWED_ORIGINS = "http://localhost:3000,http://frontend:3000,http://localhost:4200";
@@ -33,13 +34,15 @@ public class CorsFilter implements GlobalFilter, Ordered {
 
             String origin = request.getHeaders().getFirst(HttpHeaders.ORIGIN);
             if (origin != null && isAllowedOrigin(origin)) {
-                headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                // Use set() to prevent duplicate headers
+                headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
             }
 
-            headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, ALLOWED_METHODS);
-            headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, ALLOWED_HEADERS);
-            headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-            headers.add(HttpHeaders.ACCESS_CONTROL_MAX_AGE, String.valueOf(MAX_AGE));
+            // Use set() instead of add() to prevent duplicates
+            headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, ALLOWED_METHODS);
+            headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, ALLOWED_HEADERS);
+            headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            headers.set(HttpHeaders.ACCESS_CONTROL_MAX_AGE, String.valueOf(MAX_AGE));
 
             if (request.getMethod() == HttpMethod.OPTIONS) {
                 response.setStatusCode(HttpStatus.OK);

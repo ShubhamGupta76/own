@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeExchange(exchanges -> exchanges
-                        .anyExchange().permitAll() // Allow all - JWT filter handles authentication
+                        .anyExchange().permitAll() 
                 );
 
         return http.build();

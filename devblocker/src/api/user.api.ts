@@ -40,5 +40,19 @@ export const userApi = {
     const response = await apiClient.get<User[]>(API_CONFIG.ENDPOINTS.USER.USERS);
     return response.data;
   },
+
+  /**
+   * Create a new user (Admin only)
+   */
+  createUser: async (userData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    password?: string;
+  }): Promise<User> => {
+    const response = await apiClient.post<User>(API_CONFIG.ENDPOINTS.USER.USERS, userData);
+    return response.data;
+  },
 };
 

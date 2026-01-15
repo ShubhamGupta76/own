@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { teamsApi, channelsApi } from '../api';
 import { useAuth } from './AuthContext';
 import type { Team, Channel } from '../types/api';
@@ -37,6 +38,7 @@ interface TeamProviderProps {
 
 export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  const location = useLocation();
   const [teams, setTeams] = useState<Team[]>([]);
   const [channels, setChannels] = useState<Record<number, Channel[]>>({});
   const [expandedTeams, setExpandedTeams] = useState<Set<number>>(new Set());
@@ -46,14 +48,15 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   const refreshTeams = async () => {
-    if (!user?.organizationId || user.organizationId === 0) {
-      setError('Please create an organization first to access teams.');
+    // Don't fetch teams if user doesn't have organizationId
+    if (!user?.organizationId) {
       return;
     }
-
+    
     setIsLoading(true);
     setError(null);
     try {
+      // Let the API handle organizationId validation
       const fetchedTeams = await teamsApi.getMyTeams();
       setTeams(fetchedTeams);
       
@@ -63,8 +66,21 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
         await refreshChannels(fetchedTeams[0].id);
       }
     } catch (err: any) {
-      console.error('Error fetching teams:', err);
-      setError(err.response?.data?.message || 'Failed to fetch teams');
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message;
+      const status = err.response?.status;
+      
+      // Only log errors that aren't expected (like missing organizationId during onboarding)
+      if (status !== 403 && !errorMessage?.includes('Organization context is missing')) {
+        console.error('Error fetching teams:', err);
+      }
+      
+      if (status === 403) {
+        setError('Access denied: ' + (errorMessage || 'You do not have permission to access teams.'));
+      } else if (errorMessage?.includes('Organization') || errorMessage?.includes('organization context')) {
+        setError('Organization context is missing. Please contact your administrator.');
+      } else {
+        setError(errorMessage || 'Failed to fetch teams');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -139,15 +155,13 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   };
 
   const createTeam = async (name: string, description?: string): Promise<Team> => {
-    if (!user?.organizationId || user.organizationId === 0) {
-      throw new Error('Please create an organization first');
-    }
-
-    if (user.role !== 'ADMIN' && user.role !== 'MANAGER') {
+    // Frontend role check - backend will also validate
+    if (user?.role !== 'ADMIN' && user?.role !== 'MANAGER') {
       throw new Error('Only ADMIN and MANAGER roles can create teams');
     }
 
     try {
+      // Let the API handle organizationId validation
       const newTeam = await teamsApi.createTeam({ name, description });
       await refreshTeams();
       return newTeam;
@@ -157,7 +171,7 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
       let errorMessage = 'Failed to create team';
       if (err.response) {
         if (err.response.status === 403) {
-          errorMessage = 'Access denied: Only ADMIN and MANAGER roles can create teams';
+          errorMessage = err.response.data?.message || 'Access denied: Only ADMIN and MANAGER roles can create teams';
         } else if (err.response.status === 400) {
           errorMessage = err.response.data?.message || 'Invalid request. Please check your input.';
         } else if (err.response.data?.message) {
@@ -190,10 +204,33 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    if (user?.organizationId && user.organizationId > 0) {
-      refreshTeams();
+    // Don't fetch teams if:
+    // 1. No user
+    // 2. User doesn't have organizationId (e.g., during onboarding)
+    // 3. We're on pages that don't need teams data
+    if (!user) {
+      return;
     }
-  }, [user?.organizationId]);
+    
+    // Check organizationId - it might be undefined, null, or 0 during onboarding
+    const orgId = (user as any).organizationId;
+    if (!orgId || orgId === 0 || orgId === null || orgId === undefined) {
+      return;
+    }
+    
+    // Check if we're on pages that shouldn't fetch teams
+    const currentPath = location.pathname;
+    if (currentPath === '/' ||
+        currentPath.includes('/admin/onboarding') || 
+        currentPath.includes('/employee/profile-setup') ||
+        currentPath.includes('/register') ||
+        currentPath.includes('/login')) {
+      return;
+    }
+    
+    refreshTeams();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.organizationId, location.pathname]);
 
   const value: TeamContextType = {
     teams,

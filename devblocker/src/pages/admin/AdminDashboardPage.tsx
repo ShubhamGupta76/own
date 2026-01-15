@@ -1,23 +1,55 @@
-/**
- * Admin Dashboard Page
- * Main dashboard for admin users
- * Route: /app/admin/dashboard
- */
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { userApi, teamsApi } from '../../api';
 import { HiUsers, HiUserGroup, HiShieldCheck, HiChartBar } from 'react-icons/hi';
 
 export const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalTeams: 0,
+    activePolicies: 0,
+    systemHealth: '100%',
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const stats = [
-    { label: 'Total Users', value: '0', icon: HiUsers, color: 'blue', path: '/app/admin/users' },
-    { label: 'Teams', value: '0', icon: HiUserGroup, color: 'green', path: '/app/admin/teams' },
-    { label: 'Active Policies', value: '0', icon: HiShieldCheck, color: 'purple', path: '/app/admin/policies' },
-    { label: 'System Health', value: '100%', icon: HiChartBar, color: 'yellow', path: '/app/admin/settings' },
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.organizationId || user.organizationId === 0) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const [users, teams] = await Promise.all([
+          userApi.getUsers().catch(() => []),
+          teamsApi.getTeams().catch(() => []),
+        ]);
+
+        setStats({
+          totalUsers: users.length,
+          totalTeams: teams.length,
+          activePolicies: 0, // TODO: Implement when policies API is ready
+          systemHealth: '100%',
+        });
+      } catch (err) {
+        console.error('Error fetching dashboard stats:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [user?.organizationId]);
+
+  const statCards = [
+    { label: 'Total Users', value: isLoading ? '...' : stats.totalUsers.toString(), icon: HiUsers, color: 'blue', path: '/app/admin/users' },
+    { label: 'Teams', value: isLoading ? '...' : stats.totalTeams.toString(), icon: HiUserGroup, color: 'green', path: '/app/admin/teams' },
+    { label: 'Active Policies', value: isLoading ? '...' : stats.activePolicies.toString(), icon: HiShieldCheck, color: 'purple', path: '/app/admin/policies' },
+    { label: 'System Health', value: stats.systemHealth, icon: HiChartBar, color: 'yellow', path: '/app/admin/settings' },
   ];
 
   return (
@@ -29,7 +61,7 @@ export const AdminDashboardPage: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <div
             key={stat.label}
             onClick={() => navigate(stat.path)}

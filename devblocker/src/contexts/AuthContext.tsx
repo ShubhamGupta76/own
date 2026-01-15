@@ -16,6 +16,7 @@ interface AuthContextType {
   organizationLogin: (credentials: LoginRequest) => Promise<{ role: UserRole; isFirstLogin?: boolean; profileSetupRequired?: boolean }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  setToken: (token: string) => void;
   getRedirectPath: (role: UserRole | null, isFirstLogin?: boolean, profileSetupRequired?: boolean) => string;
 }
 
@@ -41,7 +42,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
-    if (decoded.role === 'ADMIN' && decoded.userId && decoded.organizationId && decoded.organizationId > 0) {
+    // Extract organizationId from JWT (can be number or null)
+    const orgId = decoded.organizationId != null ? 
+      (typeof decoded.organizationId === 'number' ? decoded.organizationId : Number(decoded.organizationId)) : 
+      null;
+
+    // For ADMIN role, try to fetch full profile from User Service
+    if (decoded.role === 'ADMIN' && decoded.userId && orgId && orgId > 0) {
       try {
         const userProfile = await userApi.getUserById(decoded.userId);
         setUser(userProfile);
@@ -61,11 +68,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     }
+    
+    // For all roles, create user object from JWT claims
     const basicUser: User = {
       id: decoded.userId,
       email: decoded.email,
       role: decoded.role,
-      organizationId: decoded.organizationId || 0,
+      organizationId: orgId || 0, // Use extracted orgId or default to 0
       status: 'ACTIVE' as const,
       createdAt: new Date().toISOString(),
     };
@@ -242,6 +251,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const decoded: JWTPayload | null = token ? decodeJWT(token) : null;
   const role = decoded?.role || user?.role || null;
 
+  const updateToken = useCallback((newToken: string) => {
+    setToken(newToken);
+    setTokenState(newToken);
+  }, []);
+
   const value: AuthContextType = {
     user,
     token,
@@ -254,6 +268,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     organizationLogin,
     logout,
     refreshUser,
+    setToken: updateToken,
     getRedirectPath,
   };
 

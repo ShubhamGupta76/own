@@ -1,6 +1,7 @@
 package com.connect.User.controller;
 
 import com.connect.User.dto.OrganizationRequest;
+import com.connect.User.dto.OrganizationResponse;
 import com.connect.User.entity.Organization;
 import com.connect.User.service.OrganizationService;
 import com.connect.User.util.JwtUtil;
@@ -40,14 +41,14 @@ public class OrganizationController {
     
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create organization", description = "Creates a new organization (tenant/company). Admin must be authenticated.")
-    public ResponseEntity<Organization> createOrganization(
+    @Operation(summary = "Create organization", description = "Creates a new organization (tenant/company) and returns a new JWT token with organizationId. Admin must be authenticated.")
+    public ResponseEntity<OrganizationResponse> createOrganization(
             @Valid @RequestBody OrganizationRequest request,
             HttpServletRequest httpRequest) {
         try {
             Long adminId = getAdminId(httpRequest);
-            Organization organization = organizationService.createOrganization(request, adminId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(organization);
+            OrganizationResponse response = organizationService.createOrganizationWithToken(request, adminId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             throw new RuntimeException(e.getMessage());
         }
