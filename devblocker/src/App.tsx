@@ -40,8 +40,8 @@ const SettingsPage = () => (
 function App() {
   return (
     <AuthProvider>
-      <TeamProvider>
-        <BrowserRouter>
+      <BrowserRouter>
+        <TeamProvider>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
@@ -198,8 +198,8 @@ function App() {
             {/* Catch all - redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
-      </TeamProvider>
+        </TeamProvider>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

@@ -13,9 +13,7 @@ import java.util.Optional;
 @Repository
 public interface PolicyRepository extends JpaRepository<Policy, Long> {
     
-    /**
-     * Find policy by organization ID and policy type
-     */
+   
     Optional<Policy> findByOrganizationIdAndPolicyType(Long organizationId, Policy.PolicyType policyType);
     
     /**

@@ -33,7 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     .setAllowedOriginPatterns(allowedOrigins.split(","));
         } else {
             registry.addEndpoint("/ws/notifications")
-                    .setAllowedOriginPatterns("http://localhost:3000", "http://frontend:3000");
+                    .setAllowedOriginPatterns("http://localhost:3000", "http://frontend:3000", "http://localhost:5173");
         }
     }
     

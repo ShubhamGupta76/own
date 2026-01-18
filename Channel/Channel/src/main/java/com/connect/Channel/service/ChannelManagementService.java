@@ -26,7 +26,7 @@ public class ChannelManagementService {
     private final ChannelMemberRepository channelMemberRepository;
     private final WebClient webClient;
     
-    @Value("${team.service.url:http://localhost:8083}")
+    @Value("${team.service.url:http://localhost:8103}")
     private String teamServiceUrl;
     
     
@@ -49,7 +49,8 @@ public class ChannelManagementService {
         
         Channel.ChannelType channelType;
         try {
-            channelType = Channel.ChannelType.valueOf(request.getType().toUpperCase());
+            String typeValue = request.getType() != null ? request.getType() : "STANDARD";
+            channelType = Channel.ChannelType.valueOf(typeValue.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid channel type: " + request.getType());
         }

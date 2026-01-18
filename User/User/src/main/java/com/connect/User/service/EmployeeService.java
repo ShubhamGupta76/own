@@ -6,6 +6,7 @@ import com.connect.User.dto.EmployeeValidationResponse;
 import com.connect.User.entity.User;
 import com.connect.User.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmployeeService {
     
     private final UserRepository userRepository;
@@ -29,49 +31,100 @@ public class EmployeeService {
      */
     @Transactional(readOnly = true)
     public EmployeeValidationResponse validateEmployeeCredentials(EmployeeLoginRequest request) {
+        log.info("Validating employee credentials for email: {}", request.getEmail());
+        
         // Find employee by email and role
+        // Note: Email lookup is case-sensitive by default in JPA
+        // If exact match fails, we'll log it for debugging
         User user = userRepository.findByEmailAndRole(request.getEmail(), User.Role.EMPLOYEE)
                 .orElse(null);
         
+        // If not found with exact match, try case-insensitive search
+        if (user == null) {
+            log.debug("Exact email match not found for: {}, trying case-insensitive search", request.getEmail());
+            // Search all users and filter by case-insensitive email and EMPLOYEE role
+            user = userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == User.Role.EMPLOYEE && u.getEmail() != null)
+                    .filter(u -> u.getEmail().equalsIgnoreCase(request.getEmail()))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (user != null) {
+                log.info("Found user with case-insensitive email match: stored={}, requested={}", 
+                        user.getEmail(), request.getEmail());
+            }
+        }
+        
         // If not found, return invalid credentials
         if (user == null) {
+            log.warn("Employee not found with email: {} and role: EMPLOYEE", request.getEmail());
             return EmployeeValidationResponse.builder()
                     .isValid(false)
-                    .message("Invalid email or password")
+                    .message("Invalid email or password. Please check your credentials or contact your administrator if you believe this is an error.")
                     .build();
         }
         
+        log.debug("Found employee user: ID={}, Email={}, Role={}, Active={}, OrganizationId={}, HasPassword={}", 
+                user.getId(), user.getEmail(), user.getRole(), user.getActive(), 
+                user.getOrganizationId(), user.getPassword() != null && !user.getPassword().isEmpty());
+        
         // Verify it's an employee
         if (user.getRole() != User.Role.EMPLOYEE) {
+            log.warn("User found but role is not EMPLOYEE. User ID: {}, Role: {}", user.getId(), user.getRole());
             return EmployeeValidationResponse.builder()
                     .isValid(false)
-                    .message("Invalid credentials")
+                    .message("Invalid credentials. This account is not an employee account.")
                     .build();
         }
         
         // Verify user is active
         if (!user.getActive()) {
+            log.warn("Employee account is disabled. User ID: {}, Email: {}", user.getId(), user.getEmail());
             return EmployeeValidationResponse.builder()
                     .isValid(false)
-                    .message("Account is disabled")
-                    .build();
-        }
-        
-        // Verify password
-        if (user.getPassword() == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return EmployeeValidationResponse.builder()
-                    .isValid(false)
-                    .message("Invalid email or password")
+                    .message("Account is disabled. Please contact your administrator.")
                     .build();
         }
         
         // CRITICAL: EMPLOYEE users MUST have organizationId assigned
         if (user.getOrganizationId() == null || user.getOrganizationId() == 0) {
+            log.warn("Employee account has no organizationId. User ID: {}, Email: {}", user.getId(), user.getEmail());
             return EmployeeValidationResponse.builder()
                     .isValid(false)
                     .message("Employee account is not assigned to an organization. Please contact your administrator.")
                     .build();
         }
+        
+        // Verify password - check if password is set first
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            log.warn("Employee password not set. User ID: {}, Email: {}", user.getId(), user.getEmail());
+            return EmployeeValidationResponse.builder()
+                    .isValid(false)
+                    .message("Password not set for this account. Please contact your administrator to set your password.")
+                    .build();
+        }
+        
+        // Verify password matches
+        log.debug("Attempting password match for user {}: Email={}, Stored password length={}, Input password length={}", 
+                user.getId(), user.getEmail(), 
+                user.getPassword() != null ? user.getPassword().length() : 0,
+                request.getPassword() != null ? request.getPassword().length() : 0);
+        
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        log.info("Password match result for user {} ({}): {}", user.getId(), user.getEmail(), passwordMatches);
+        
+        if (!passwordMatches) {
+            log.warn("Password mismatch for employee. User ID: {}, Email: {}, Stored password hash: {}...", 
+                    user.getId(), user.getEmail(), 
+                    user.getPassword() != null && user.getPassword().length() > 10 
+                        ? user.getPassword().substring(0, 10) : "null");
+            return EmployeeValidationResponse.builder()
+                    .isValid(false)
+                    .message("Invalid email or password. Please check your credentials.")
+                    .build();
+        }
+        
+        log.info("Employee credentials validated successfully. User ID: {}, Email: {}", user.getId(), user.getEmail());
         
         return EmployeeValidationResponse.builder()
                 .userId(user.getId())
@@ -79,7 +132,7 @@ public class EmployeeService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .organizationId(user.getOrganizationId())
-                .role(user.getRole())
+                .role(user.getRole().name()) // Convert enum to string
                 .isValid(true)
                 .isFirstLogin(user.getIsFirstLogin())
                 .message("Credentials valid")

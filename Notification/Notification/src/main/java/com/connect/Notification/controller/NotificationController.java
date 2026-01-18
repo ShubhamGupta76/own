@@ -63,14 +63,14 @@ public class NotificationController {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
             List<NotificationResponse> notifications = notificationService.getNotifications(userId, organizationId);
             return ResponseEntity.ok(notifications);
         } catch (RuntimeException e) {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : "Failed to retrieve notifications");
         }
     }
     
@@ -86,8 +86,8 @@ public class NotificationController {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
             List<NotificationResponse> notifications = notificationService.getUnreadNotifications(userId, organizationId);
@@ -109,8 +109,8 @@ public class NotificationController {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
             Long count = notificationService.getUnreadCount(userId, organizationId);
@@ -134,8 +134,8 @@ public class NotificationController {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
             NotificationResponse notification = notificationService.markAsRead(id, userId, organizationId);
@@ -157,8 +157,8 @@ public class NotificationController {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
             notificationService.markAllAsRead(userId, organizationId);
@@ -182,8 +182,8 @@ public class NotificationController {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
             List<NotificationResponse> activities = notificationService.getActivityFeed(userId, organizationId, limit);

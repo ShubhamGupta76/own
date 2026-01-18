@@ -15,6 +15,12 @@ export const AdminUsersPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -89,6 +95,57 @@ export const AdminUsersPage: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleResetPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    
+    setResetError('');
+    setResetSuccess(false);
+    setIsResetting(true);
+
+    try {
+      if (!resetPassword || resetPassword.length < 8) {
+        setResetError('Password must be at least 8 characters long');
+        setIsResetting(false);
+        return;
+      }
+
+      await userApi.resetPassword(selectedUser.id, resetPassword);
+      
+      // Show success message
+      setResetSuccess(true);
+      
+      // Close modal and reset state after a short delay to show success message
+      setTimeout(() => {
+        setShowResetPasswordModal(false);
+        setSelectedUser(null);
+        setResetPassword('');
+        setResetSuccess(false);
+        
+        // Refresh users list
+        userApi.getUsers().then(fetchedUsers => {
+          setUsers(fetchedUsers);
+        }).catch(err => {
+          console.error('Error refreshing users:', err);
+        });
+      }, 1500); // Show success message for 1.5 seconds
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to reset password';
+      setResetError(errorMessage);
+      console.error('Error resetting password:', err);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const openResetPasswordModal = (user: User) => {
+    setSelectedUser(user);
+    setResetPassword('');
+    setResetError('');
+    setResetSuccess(false);
+    setShowResetPasswordModal(true);
   };
 
   if (isLoading) {
@@ -175,6 +232,14 @@ export const AdminUsersPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.role === 'EMPLOYEE' && (
+                      <button 
+                        onClick={() => openResetPasswordModal(user)}
+                        className="text-green-600 hover:text-green-900 mr-4"
+                      >
+                        Reset Password
+                      </button>
+                    )}
                     <button className="text-blue-600 hover:text-blue-900 mr-4">Edit</button>
                     <button className="text-red-600 hover:text-red-900">Delete</button>
                   </td>
@@ -340,6 +405,106 @@ export const AdminUsersPage: React.FC = () => {
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCreating ? 'Creating...' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {showResetPasswordModal && selectedUser && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          style={{ zIndex: 9999 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowResetPasswordModal(false);
+              setSelectedUser(null);
+              setResetPassword('');
+              setResetError('');
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Reset Password</h2>
+              <button
+                onClick={() => {
+                  setShowResetPasswordModal(false);
+                  setSelectedUser(null);
+                  setResetPassword('');
+                  setResetError('');
+                  setResetSuccess(false);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Reset password for <strong>{selectedUser.email}</strong> ({selectedUser.firstName} {selectedUser.lastName})
+            </p>
+
+            {resetSuccess && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800 font-medium">
+                  ✓ Password reset successfully! The employee can now log in with the new password.
+                </p>
+              </div>
+            )}
+
+            {resetError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800">{resetError}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label htmlFor="resetPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  New Password *
+                </label>
+                <input
+                  type="password"
+                  id="resetPassword"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Minimum 8 characters"
+                  minLength={8}
+                  required
+                  autoFocus
+                  autoComplete="new-password"
+                />
+                <p className="mt-1 text-xs text-gray-500">Password must be at least 8 characters long</p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetPasswordModal(false);
+                    setSelectedUser(null);
+                    setResetPassword('');
+                    setResetError('');
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResetting}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResetting ? 'Resetting...' : 'Reset Password'}
                 </button>
               </div>
             </form>

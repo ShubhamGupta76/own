@@ -303,5 +303,7 @@ export interface ApiError {
   status: number;
   path?: string;
   timestamp?: string;
+  errorCode?: string;
+  message?: string;
 }
 

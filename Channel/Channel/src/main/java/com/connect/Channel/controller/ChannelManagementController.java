@@ -20,7 +20,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Tag(name = "Channel Management", description = "Channel creation and management APIs")
 @SecurityRequirement(name = "bearerAuth")
@@ -66,8 +66,12 @@ public class ChannelManagementController {
             String role = getRole(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (role == null || role.trim().isEmpty()) {
+                throw new RuntimeException("Access denied: User role is missing from token. Please log out and log back in.");
+            }
+            
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Your account may not be associated with an organization yet, or you're using an old token. Please log out and log back in to refresh your authentication token.");
             }
             
             ChannelResponse channel = channelManagementService.createChannel(teamId, request, userId, organizationId, role);
@@ -87,8 +91,8 @@ public class ChannelManagementController {
         try {
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             List<ChannelResponse> channels = channelManagementService.getChannelsByTeam(teamId, organizationId);
@@ -116,8 +120,8 @@ public class ChannelManagementController {
                 throw new RuntimeException("User ID is required");
             }
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             ChannelMemberResponse member = channelManagementService.addChannelMember(
@@ -141,8 +145,8 @@ public class ChannelManagementController {
             String role = getRole(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             channelManagementService.removeChannelMember(channelId, userId, currentUserId, organizationId, role);
@@ -162,8 +166,8 @@ public class ChannelManagementController {
         try {
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             List<ChannelMemberResponse> members = channelManagementService.getChannelMembers(channelId, organizationId);

@@ -30,12 +30,14 @@ export const OrganizationRegistrationPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Use the standard register endpoint - backend should handle organization creation
-      const response = await authApi.register({
-        email: formData.adminEmail,
-        password: formData.adminPassword,
-        firstName: formData.adminFirstName,
-        lastName: formData.adminLastName,
+      // Use the organization registration endpoint that creates both admin and organization
+      const response = await authApi.registerOrganization({
+        organizationName: formData.organizationName,
+        adminEmail: formData.adminEmail,
+        adminPassword: formData.adminPassword,
+        adminFirstName: formData.adminFirstName,
+        adminLastName: formData.adminLastName,
+        description: formData.description,
       });
 
       // After successful registration, redirect to admin onboarding

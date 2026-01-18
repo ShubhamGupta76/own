@@ -54,5 +54,25 @@ export const userApi = {
     const response = await apiClient.post<User>(API_CONFIG.ENDPOINTS.USER.USERS, userData);
     return response.data;
   },
+
+  /**
+   * Reset user password (Admin only)
+   */
+  resetPassword: async (userId: number, newPassword: string): Promise<User> => {
+    const response = await apiClient.put<User>(
+      `${API_CONFIG.ENDPOINTS.USER.USERS}/${userId}/password`,
+      { password: newPassword }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get organization members (for adding to teams/channels)
+   * Accessible by ADMIN, MANAGER, and EMPLOYEE
+   */
+  getOrganizationMembers: async (): Promise<User[]> => {
+    const response = await apiClient.get<User[]>(`${API_CONFIG.ENDPOINTS.USER.USERS}/organization/members`);
+    return response.data;
+  },
 };
 

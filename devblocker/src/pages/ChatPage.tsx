@@ -36,17 +36,29 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
     const fetchMessages = async () => {
       try {
         setIsLoading(true);
+        setError('');
         let response;
         if (actualRoomType === 'channel' && channelId) {
           response = await chatApi.getChannelMessages(channelId, 0, 50);
         } else if (actualRoomType === 'direct' && actualUserId) {
-        response = await chatApi.getDirectMessages(actualUserId, 0, 50);
-      } else {
-        return;
-      }
-        setMessages(response.content || []);
+          response = await chatApi.getDirectMessages(actualUserId, 0, 50);
+        } else {
+          return;
+        }
+        // Backend returns List<Message> directly, not PaginatedResponse
+        // Handle both formats: array directly or PaginatedResponse with content
+        const messagesArray = Array.isArray(response) ? response : (response.content || []);
+        setMessages(messagesArray);
       } catch (err: any) {
-        setError(err.response?.data?.error || 'Failed to load messages');
+        const status = err.response?.status;
+        const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to load messages';
+        
+        // Handle 404 specifically
+        if (status === 404) {
+          setError('Channel or messages not found. The channel may not exist or you may not have access.');
+        } else {
+          setError(errorMessage);
+        }
         console.error('Error fetching messages:', err);
       } finally {
         setIsLoading(false);

@@ -39,18 +39,29 @@ public class OrganizationController {
         throw new RuntimeException("Missing or invalid authorization header");
     }
     
-    @PostMapping
+    @PostMapping(value = {"", "/"})
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create organization", description = "Creates a new organization (tenant/company) and returns a new JWT token with organizationId. Admin must be authenticated.")
     public ResponseEntity<OrganizationResponse> createOrganization(
             @Valid @RequestBody OrganizationRequest request,
             HttpServletRequest httpRequest) {
+        Long adminId = getAdminId(httpRequest);
+        
+        // Check if admin already has an organization
         try {
-            Long adminId = getAdminId(httpRequest);
-            OrganizationResponse response = organizationService.createOrganizationWithToken(request, adminId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            organizationService.getOrganizationByAdminId(adminId);
+            // Admin already has an organization, return conflict
+            throw new RuntimeException("Organization already exists for this admin. Please use the existing organization.");
         } catch (RuntimeException e) {
-            throw new RuntimeException(e.getMessage());
+            // If exception message contains "not found", admin doesn't have org yet, continue
+            if (e.getMessage() != null && e.getMessage().contains("Organization not found")) {
+                // Admin doesn't have organization, proceed with creation
+                // The service will throw if organization name already exists globally
+                OrganizationResponse response = organizationService.createOrganizationWithToken(request, adminId);
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            }
+            // Re-throw other exceptions (like "already exists for this admin")
+            throw e;
         }
     }
     
@@ -71,14 +82,15 @@ public class OrganizationController {
     
     @GetMapping("/my-organization")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get my organization", description = "Retrieves the organization associated with the authenticated admin.")
+    @Operation(summary = "Get my organization", description = "Retrieves the organization associated with the authenticated admin. Returns 404 if no organization exists yet.")
     public ResponseEntity<Organization> getMyOrganization(HttpServletRequest httpRequest) {
         try {
             Long adminId = getAdminId(httpRequest);
             Organization organization = organizationService.getOrganizationByAdminId(adminId);
             return ResponseEntity.ok(organization);
         } catch (RuntimeException e) {
-            throw new RuntimeException(e.getMessage());
+            // Let GlobalExceptionHandler convert to 404
+            throw e;
         }
     }
 

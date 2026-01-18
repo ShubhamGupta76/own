@@ -73,30 +73,46 @@ public class TeamManagementController {
         throw new RuntimeException("Missing or invalid authorization header");
     }
     
-    @PostMapping
+    @PostMapping(value = {"", "/"})
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @Operation(summary = "Create team", description = "Creates a new team. Only ADMIN and MANAGER can create teams. Auto-creates 'General' channel.")
     public ResponseEntity<TeamResponse> createTeam(
             @Valid @RequestBody CreateTeamRequest request,
             HttpServletRequest httpRequest) {
         try {
+            // Log authentication context for debugging
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                log.info("createTeam - Authentication: {}, Authorities: {}", auth.getName(), auth.getAuthorities());
+            } else {
+                log.warn("createTeam - No authentication found in SecurityContext");
+            }
+            
             Long userId = getUserId(httpRequest);
             String role = getRole(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            log.debug("Creating team - UserId: {}, Role: {}, OrganizationId: {}", userId, role, organizationId);
+            log.info("Creating team - UserId: {}, Role: {}, OrganizationId: {}", userId, role, organizationId);
             
             if (role == null || role.trim().isEmpty()) {
                 log.error("Role is null or empty when creating team. UserId: {}, OrganizationId: {}", userId, organizationId);
-                throw new RuntimeException("User role is missing from token");
+                throw new RuntimeException("Access denied: User role is missing from token. Please log out and log back in.");
+            }
+            
+            // Normalize role to uppercase for comparison
+            String normalizedRole = role.trim().toUpperCase();
+            if (!normalizedRole.equals("ADMIN") && !normalizedRole.equals("MANAGER")) {
+                log.error("User with role '{}' attempted to create team. UserId: {}", role, userId);
+                throw new RuntimeException("Access denied: Only ADMIN and MANAGER roles can create teams");
             }
             
             if (organizationId == null || organizationId == 0) {
-                log.error("Missing organizationId for userId: {}, role: {} in createTeam", userId, role);
-                throw new RuntimeException("Access denied: Organization context is missing. Only users with an assigned organization can create teams.");
+                log.error("Missing organizationId for userId: {}, role: {} in createTeam. Token may not have organizationId set. User needs to log out and log back in to get a fresh token.", userId, role);
+                throw new RuntimeException("Access denied: Organization context is missing. Your account may not be associated with an organization yet, or you're using an old token. Please log out and log back in to refresh your authentication token.");
             }
             
-            TeamResponse team = teamManagementService.createTeam(request, userId, organizationId, role);
+            String authToken = extractToken(httpRequest);
+            TeamResponse team = teamManagementService.createTeam(request, userId, organizationId, role, authToken);
             return ResponseEntity.status(HttpStatus.CREATED).body(team);
         } catch (RuntimeException e) {
             log.error("Error creating team: {}", e.getMessage());
@@ -115,8 +131,12 @@ public class TeamManagementController {
             String role = getRole(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (role == null || role.trim().isEmpty()) {
+                throw new RuntimeException("Access denied: User role is missing from token. Please log out and log back in.");
+            }
+            
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             TeamMemberResponse member = teamManagementService.addTeamMember(teamId, request, organizationId, role);
@@ -148,24 +168,41 @@ public class TeamManagementController {
         }
     }
     
-    @GetMapping
+    @GetMapping(value = {"", "/"})
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get all teams", description = "Retrieves all active teams in the organization. All roles can view.")
     public ResponseEntity<List<TeamResponse>> getAllTeams(HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            // Log authentication context for debugging
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                log.info("getAllTeams - Authentication: {}, Authorities: {}", auth.getName(), auth.getAuthorities());
+            } else {
+                log.warn("getAllTeams - No authentication found in SecurityContext");
+            }
+            
+            Long userId = getUserId(httpRequest);
             String role = getRole(httpRequest);
+            Long organizationId = getOrganizationId(httpRequest);
+            
+            log.info("getAllTeams - UserId: {}, Role: {}, OrganizationId: {}", userId, role, organizationId);
+            
+            if (role == null || role.trim().isEmpty()) {
+                log.error("Role is null or empty in getAllTeams. UserId: {}, OrganizationId: {}", userId, organizationId);
+                throw new RuntimeException("Access denied: User role is missing from token. Please log out and log back in.");
+            }
             
             if (organizationId == null || organizationId == 0) {
-                log.error("Missing organizationId for role: {} in getAllTeams", role);
-                throw new RuntimeException("Access denied: Organization context is missing. Please contact your administrator.");
+                log.error("Missing organizationId for userId: {}, role: {} in getAllTeams. Token may not have organizationId set.", userId, role);
+                throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
             List<TeamResponse> teams = teamManagementService.getAllTeams(organizationId);
+            log.info("Successfully retrieved {} teams for organizationId: {}", teams.size(), organizationId);
             return ResponseEntity.ok(teams);
         } catch (RuntimeException e) {
-            log.error("Error in getAllTeams: {}", e.getMessage());
-            throw new RuntimeException(e.getMessage());
+            log.error("Error in getAllTeams: {}", e.getMessage(), e);
+            throw new RuntimeException(e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : "Access denied: Unable to retrieve teams. Please check your authentication token.");
         }
     }
     
@@ -175,19 +212,27 @@ public class TeamManagementController {
     public ResponseEntity<List<TeamResponse>> getMyTeams(HttpServletRequest httpRequest) {
         try {
             Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
             String role = getRole(httpRequest);
+            Long organizationId = getOrganizationId(httpRequest);
+            
+            log.info("getMyTeams - UserId: {}, Role: {}, OrganizationId: {}", userId, role, organizationId);
+            
+            if (role == null || role.trim().isEmpty()) {
+                log.error("Role is null or empty in getMyTeams. UserId: {}, OrganizationId: {}", userId, organizationId);
+                throw new RuntimeException("Access denied: User role is missing from token. Please log out and log back in.");
+            }
             
             if (organizationId == null || organizationId == 0) {
-                log.error("Missing organizationId for userId: {}, role: {} in getMyTeams", userId, role);
-                throw new RuntimeException("Access denied: Organization context is missing. Please contact your administrator.");
+                log.error("Missing organizationId for userId: {}, role: {} in getMyTeams. Token may not have organizationId set.", userId, role);
+                throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
             List<TeamResponse> teams = teamManagementService.getMyTeams(userId, organizationId);
+            log.info("Successfully retrieved {} teams for userId: {}, organizationId: {}", teams.size(), userId, organizationId);
             return ResponseEntity.ok(teams);
         } catch (RuntimeException e) {
-            log.error("Error in getMyTeams: {}", e.getMessage());
-            throw new RuntimeException(e.getMessage());
+            log.error("Error in getMyTeams: {}", e.getMessage(), e);
+            throw new RuntimeException(e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : "Access denied: Unable to retrieve teams. Please check your authentication token.");
         }
     }
 }

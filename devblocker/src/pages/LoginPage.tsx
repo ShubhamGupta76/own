@@ -59,12 +59,18 @@ export const LoginPage: React.FC = () => {
                           'Login failed. Please check your credentials.';
       
       // Provide helpful hints based on error
-      if (errorMessage.includes('Invalid') || errorMessage.includes('not found') || errorMessage.includes('credentials')) {
+      if (errorMessage.includes('Password not set')) {
+        setError('Password not set for this account. Please contact your administrator to set your password.');
+      } else if (errorMessage.includes('not assigned to an organization')) {
+        setError('Your account is not assigned to an organization. Please contact your administrator.');
+      } else if (errorMessage.includes('Account is disabled')) {
+        setError('Your account is disabled. Please contact your administrator.');
+      } else if (errorMessage.includes('Invalid') || errorMessage.includes('not found') || errorMessage.includes('credentials')) {
         const userTypeLabel = 
           userType === 'admin' ? 'Admin/Manager' : 
           userType === 'organization' ? 'Organization' : 
           'Employee';
-        setError(`Invalid credentials. Please check your email and password. Make sure you selected "${userTypeLabel}" if you registered as ${userTypeLabel}.`);
+        setError(`Invalid credentials. Please check your email and password. Make sure you selected "${userTypeLabel}" if you registered as ${userTypeLabel}. If you just registered, your administrator may need to set your password.`);
       } else {
         setError(errorMessage);
       }

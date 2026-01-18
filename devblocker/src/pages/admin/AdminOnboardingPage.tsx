@@ -26,27 +26,36 @@ export const AdminOnboardingPage: React.FC = () => {
   useEffect(() => {
     const checkExistingOrganization = async () => {
       try {
-        const org = await organizationApi.getMyOrganization();
-        if (org && org.id) {
-          // Organization exists, but token might not have organizationId
-          // Force token refresh by logging in again
-          const token = getToken();
-          if (token) {
-            const decoded = decodeJWT(token);
-            if (decoded?.email) {
-              // Try to get a fresh token - for now, just refresh user
-              await refreshUser();
-              // If still no organizationId, redirect to login to get fresh token
-              const newDecoded = decodeJWT(getToken() || '');
-              if (!newDecoded?.organizationId || newDecoded.organizationId === 0) {
-                // Token still doesn't have organizationId, need to login again
-                navigate('/login', { replace: true });
-              } else {
-                // Token has organizationId now, go to dashboard
+        // First check if token has organizationId
+        const token = getToken();
+        if (token) {
+          const decoded = decodeJWT(token);
+          if (decoded?.organizationId && decoded.organizationId !== 0) {
+            // Token already has organizationId, check if org exists
+            try {
+              const org = await organizationApi.getMyOrganization();
+              if (org && org.id) {
+                // Organization exists and token is valid, go to dashboard
                 navigate('/app/admin/dashboard', { replace: true });
+                return;
+              }
+            } catch (orgErr: any) {
+              // If getMyOrganization fails but we have organizationId in token,
+              // try refreshing user and redirect
+              if (orgErr.response?.status === 404) {
+                // Organization might not exist yet, continue with onboarding
+                return;
               }
             }
           }
+        }
+
+        // Try to get organization
+        const org = await organizationApi.getMyOrganization();
+        if (org && org.id) {
+          // Organization exists, refresh user and redirect
+          await refreshUser();
+          navigate('/app/admin/dashboard', { replace: true });
         }
       } catch (err: any) {
         // Organization doesn't exist yet (404) - this is expected during onboarding
@@ -89,23 +98,38 @@ export const AdminOnboardingPage: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // First check if organization already exists
+      try {
+        const existingOrg = await organizationApi.getMyOrganization();
+        if (existingOrg && existingOrg.id) {
+          // Organization already exists, just refresh and redirect
+          await refreshUser();
+          navigate('/app/admin/dashboard', { replace: true });
+          return;
+        }
+      } catch (checkErr: any) {
+        // Organization doesn't exist (404), continue with creation
+        if (checkErr.response?.status !== 404) {
+          // Unexpected error, log it but continue
+          console.warn('Error checking existing organization:', checkErr);
+        }
+      }
+
       // Create organization via API
       const response = await organizationApi.createOrganization({
         name: organizationName,
         domain: undefined, // Optional domain can be added later
       });
 
-      // Token is automatically updated by organizationApi.createOrganization
-      // Update token state in AuthContext
+      // Token is automatically updated by organizationApi.createOrganization in localStorage
+      // Update token state in AuthContext and refresh user data
       if (response.token) {
         setToken(response.token);
+        // Small delay to ensure token is stored
+        await new Promise(resolve => setTimeout(resolve, 100));
+        // Refresh user context to get updated organizationId
+        await refreshUser();
       }
-      
-      // Small delay to ensure token is stored
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Refresh user context to get updated organizationId
-      await refreshUser();
       
       navigate('/app/admin/dashboard', { replace: true });
     } catch (err: any) {
@@ -120,13 +144,45 @@ export const AdminOnboardingPage: React.FC = () => {
         errorMessage = err.message;
       }
       
-      // Provide more helpful error messages
+      // Provide more helpful error messages based on backend response
+      const errorData = err.response?.data;
+      const errorCode = errorData?.errorCode;
+      
       if (err.response?.status === 500) {
-        errorMessage = 'Server error while creating organization. Please check that all services are running and try again.';
+        // Check if it's a service communication error
+        if (errorCode === 'SERVICE_UNAVAILABLE' || 
+            errorMessage.toLowerCase().includes('auth service') ||
+            errorMessage.toLowerCase().includes('cannot connect') ||
+            errorMessage.toLowerCase().includes('not running')) {
+          errorMessage = 'Auth service is not available. Please ensure the Auth service is running and try again.';
+        } else if (errorMessage.toLowerCase().includes('already exists')) {
+          // Organization already exists, try to get it and redirect
+          errorMessage = 'Organization already exists. Redirecting...';
+          try {
+            await refreshUser();
+            navigate('/app/admin/dashboard', { replace: true });
+            return;
+          } catch (refreshErr) {
+            errorMessage = 'Organization already exists, but there was an error refreshing your session. Please try logging in again.';
+          }
+        } else {
+          // Use backend message if available, otherwise generic message
+          errorMessage = errorMessage || 'Server error while creating organization. Please check that all services are running and try again.';
+        }
       } else if (err.response?.status === 403) {
         errorMessage = 'Access denied. Please ensure you are logged in as an admin.';
       } else if (err.response?.status === 400) {
         errorMessage = errorMessage || 'Invalid organization data. Please check your input and try again.';
+      } else if (err.response?.status === 409) {
+        // Organization already exists
+        errorMessage = 'Organization already exists. Redirecting...';
+        try {
+          await refreshUser();
+          navigate('/app/admin/dashboard', { replace: true });
+          return;
+        } catch (refreshErr) {
+          errorMessage = 'Organization already exists, but there was an error refreshing your session. Please try logging in again.';
+        }
       }
       
       setError(errorMessage);

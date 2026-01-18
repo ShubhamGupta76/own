@@ -35,19 +35,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
     /**
      * Register STOMP endpoints
+     * withSockJS() provides both SockJS and plain WebSocket support
      */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         String allowedOrigins = System.getenv("WEBSOCKET_ALLOWED_ORIGINS");
-        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            registry.addEndpoint("/ws/chat")
-                    .setAllowedOriginPatterns(allowedOrigins.split(","))
-                    .withSockJS();
-        } else {
-            registry.addEndpoint("/ws/chat")
-                    .setAllowedOriginPatterns("http://localhost:3000", "http://frontend:3000")
-                    .withSockJS();
-        }
+        String[] origins = allowedOrigins != null && !allowedOrigins.isEmpty()
+                ? allowedOrigins.split(",")
+                : new String[]{"http://localhost:3000", "http://frontend:3000", "http://localhost:5173"};
+        
+        // SockJS endpoint supports both SockJS and plain WebSocket connections
+        registry.addEndpoint("/ws/chat")
+                .setAllowedOriginPatterns(origins)
+                .withSockJS();
     }
     
     /**

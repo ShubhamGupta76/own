@@ -1,6 +1,5 @@
 package com.connect.User.dto;
 
-import com.connect.User.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +19,7 @@ public class EmployeeValidationResponse {
     private String firstName;
     private String lastName;
     private Long organizationId;
-    private User.Role role;
+    private String role; // Changed from User.Role enum to String for API compatibility
     private Boolean isValid;
     private Boolean isFirstLogin;
     private String message;

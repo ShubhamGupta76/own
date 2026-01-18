@@ -28,11 +28,11 @@ public class TeamManagementService {
     private final TeamMemberRepository teamMemberRepository;
     private final WebClient webClient;
     
-    @Value("${channel.service.url:http://localhost:8084}")
+    @Value("${channel.service.url:http://localhost:8104}")
     private String channelServiceUrl;
     
     @Transactional
-    public TeamResponse createTeam(CreateTeamRequest request, Long createdBy, Long organizationId, String role) {
+    public TeamResponse createTeam(CreateTeamRequest request, Long createdBy, Long organizationId, String role, String authToken) {
         if (role == null || role.trim().isEmpty()) {
             log.error("Role is null or empty when creating team. UserId: {}, OrganizationId: {}", createdBy, organizationId);
             throw new RuntimeException("User role is missing");
@@ -64,7 +64,7 @@ public class TeamManagementService {
         teamMemberRepository.save(owner);
         
         try {
-            createGeneralChannel(team.getId(), organizationId);
+            createGeneralChannel(team.getId(), organizationId, authToken);
             log.info("General channel created for team: {}", team.getId());
         } catch (Exception e) {
             log.error("Failed to create General channel for team {}: {}", team.getId(), e.getMessage());
@@ -166,26 +166,34 @@ public class TeamManagementService {
                 .orElseThrow(() -> new RuntimeException("Team not found"));
     }
     
-    private void createGeneralChannel(Long teamId, Long organizationId) {
+    private void createGeneralChannel(Long teamId, Long organizationId, String authToken) {
         try {
             java.util.Map<String, Object> channelRequest = new java.util.HashMap<>();
             channelRequest.put("name", "General");
             channelRequest.put("description", "General discussion channel");
-            channelRequest.put("teamId", teamId);
             channelRequest.put("type", "STANDARD");
             channelRequest.put("chatEnabled", true);
             channelRequest.put("fileEnabled", true);
             channelRequest.put("meetingEnabled", true);
             
+            // Add Bearer prefix (extractToken returns token without prefix)
+            String bearerToken = "Bearer " + authToken;
+            
+            log.debug("Creating General channel for team {} with endpoint: {}/api/v1/teams/{}/channels", 
+                    teamId, channelServiceUrl, teamId);
+            
             webClient.post()
-                    .uri(channelServiceUrl + "/api/channels/create")
+                    .uri(channelServiceUrl + "/api/v1/teams/" + teamId + "/channels")
+                    .header("Authorization", bearerToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(channelRequest)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
+            
+            log.info("Successfully created General channel for team {}", teamId);
         } catch (Exception e) {
-            log.error("Error creating General channel: {}", e.getMessage());
+            log.error("Error creating General channel for team {}: {}", teamId, e.getMessage(), e);
             throw new RuntimeException("Failed to create General channel: " + e.getMessage());
         }
     }

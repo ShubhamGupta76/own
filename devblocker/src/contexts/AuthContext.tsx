@@ -48,10 +48,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       null;
 
     // For ADMIN role, try to fetch full profile from User Service
+    // BUT always use email from token to ensure correct user is displayed
     if (decoded.role === 'ADMIN' && decoded.userId && orgId && orgId > 0) {
       try {
         const userProfile = await userApi.getUserById(decoded.userId);
-        setUser(userProfile);
+        // CRITICAL: Always use email from token to ensure correct user is displayed
+        // This prevents showing wrong user when multiple admins exist
+        const userWithCorrectEmail: User = {
+          ...userProfile,
+          email: decoded.email, // Override with email from token
+        };
+        setUser(userWithCorrectEmail);
         return;
       } catch (error: any) {
         const status = error.response?.status;
@@ -70,9 +77,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     // For all roles, create user object from JWT claims
+    // Always use email from token to ensure correct user is displayed
     const basicUser: User = {
       id: decoded.userId,
-      email: decoded.email,
+      email: decoded.email, // Always use email from token
       role: decoded.role,
       organizationId: orgId || 0, // Use extracted orgId or default to 0
       status: 'ACTIVE' as const,

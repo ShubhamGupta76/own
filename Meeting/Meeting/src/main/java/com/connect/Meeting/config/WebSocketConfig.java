@@ -34,7 +34,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     .withSockJS();
         } else {
             registry.addEndpoint("/ws/meeting")
-                    .setAllowedOriginPatterns("http://localhost:3000", "http://frontend:3000")
+                    .setAllowedOriginPatterns("http://localhost:3000", "http://frontend:3000", "http://localhost:5173")
                     .withSockJS();
         }
     }

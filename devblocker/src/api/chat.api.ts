@@ -21,13 +21,14 @@ export const chatApi = {
 
   /**
    * Get channel messages
+   * Backend returns List<MessageResponse> directly, not PaginatedResponse
    */
   getChannelMessages: async (
     channelId: number,
     page: number = 0,
     size: number = 20
-  ): Promise<PaginatedResponse<Message>> => {
-    const response = await apiClient.get<PaginatedResponse<Message>>(
+  ): Promise<Message[] | PaginatedResponse<Message>> => {
+    const response = await apiClient.get<Message[] | PaginatedResponse<Message>>(
       `${API_CONFIG.ENDPOINTS.CHAT.CHANNEL_MESSAGES(channelId)}?page=${page}&size=${size}`
     );
     return response.data;
@@ -35,13 +36,14 @@ export const chatApi = {
 
   /**
    * Get direct messages
+   * Backend returns List<MessageResponse> directly, not PaginatedResponse
    */
   getDirectMessages: async (
     userId: number,
     page: number = 0,
     size: number = 20
-  ): Promise<PaginatedResponse<Message>> => {
-    const response = await apiClient.get<PaginatedResponse<Message>>(
+  ): Promise<Message[] | PaginatedResponse<Message>> => {
+    const response = await apiClient.get<Message[] | PaginatedResponse<Message>>(
       `${API_CONFIG.ENDPOINTS.CHAT.DIRECT_MESSAGES(userId)}?page=${page}&size=${size}`
     );
     return response.data;

@@ -5,7 +5,7 @@
 
 import { apiClient } from './index';
 import { API_CONFIG, setToken } from '../config/api';
-import type { Organization } from '../types/api';
+import type { Organization, ApiError } from '../types/api';
 
 export interface OrganizationRequest {
   name: string;
@@ -25,6 +25,7 @@ export interface OrganizationResponse {
 export const organizationApi = {
   /**
    * Create a new organization
+   * Returns new JWT token with organizationId
    */
   createOrganization: async (request: OrganizationRequest): Promise<OrganizationResponse> => {
     const response = await apiClient.post<OrganizationResponse>(
@@ -54,12 +55,35 @@ export const organizationApi = {
 
   /**
    * Get my organization
+   * Throws error with errorCode: ORGANIZATION_NOT_CREATED if organization doesn't exist
    */
   getMyOrganization: async (): Promise<Organization> => {
-    const response = await apiClient.get<Organization>(
-      API_CONFIG.ENDPOINTS.ORGANIZATION.MY_ORGANIZATION
-    );
-    return response.data;
+    try {
+      const response = await apiClient.get<Organization>(
+        API_CONFIG.ENDPOINTS.ORGANIZATION.MY_ORGANIZATION
+      );
+      return response.data;
+    } catch (error: any) {
+      // Re-throw with proper error structure
+      if (error.response?.status === 404) {
+        const errorData = error.response.data as ApiError;
+        if (errorData?.errorCode === 'ORGANIZATION_NOT_CREATED' || 
+            (errorData?.message && errorData.message.toLowerCase().includes('organization not found'))) {
+          throw {
+            ...error,
+            response: {
+              ...error.response,
+              data: {
+                ...errorData,
+                errorCode: 'ORGANIZATION_NOT_CREATED',
+                message: errorData.message || 'Organization not found. Please create an organization first.',
+              },
+            },
+          };
+        }
+      }
+      throw error;
+    }
   },
 };
 

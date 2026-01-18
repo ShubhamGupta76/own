@@ -44,11 +44,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwtUtil.validateToken(token)) {
                 String role = jwtUtil.extractRole(token);
                 String email = jwtUtil.extractEmail(token);
+                Long userId = jwtUtil.extractUserId(token);
+                Long organizationId = jwtUtil.extractOrganizationId(token);
+                
+                log.info("JWT token processed - UserId: {}, Email: {}, Role: {}, OrganizationId: {}", 
+                        userId, email, role, organizationId);
                 
                 if (role == null || role.isEmpty()) {
-                    log.warn("JWT token missing role claim for email: {}", email);
+                    log.warn("JWT token missing role claim for email: {}, userId: {}", email, userId);
                     filterChain.doFilter(request, response);
                     return;
+                }
+                
+                if (organizationId == null || organizationId == 0) {
+                    log.warn("JWT token missing organizationId for email: {}, userId: {}, role: {}. User may need to log out and log back in.", 
+                            email, userId, role);
                 }
                 
                 String normalizedRole = role.trim().toUpperCase();

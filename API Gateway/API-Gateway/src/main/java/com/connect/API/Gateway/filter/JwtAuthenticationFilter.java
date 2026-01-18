@@ -33,8 +33,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         String path = request.getURI().getPath();
 
         
+        // Allow all auth endpoints without JWT validation
         if (path.startsWith(AUTH_PATH)) {
             log.debug("Public endpoint accessed: {}", path);
+            return chain.filter(exchange);
+        }
+        
+        // Also allow actuator endpoints
+        if (path.startsWith("/actuator/")) {
+            log.debug("Actuator endpoint accessed: {}", path);
             return chain.filter(exchange);
         }
 

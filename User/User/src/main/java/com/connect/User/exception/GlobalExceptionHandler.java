@@ -35,6 +35,10 @@ public class GlobalExceptionHandler {
                 lowerMessage.contains("organization not found")) {
                 status = HttpStatus.NOT_FOUND;
                 error = "Not Found";
+                // Add error code for frontend handling
+                if (lowerMessage.contains("organization not found") && lowerMessage.contains("create")) {
+                    response.put("errorCode", "ORGANIZATION_NOT_CREATED");
+                }
                 log.debug("Mapped to 404 Not Found: {}", message);
             } else if (lowerMessage.contains("access denied") || 
                        lowerMessage.contains("permission") || 
@@ -50,6 +54,16 @@ public class GlobalExceptionHandler {
                 status = HttpStatus.CONFLICT;
                 error = "Conflict";
                 log.debug("Mapped to 409 Conflict: {}", message);
+            } else if (lowerMessage.contains("auth service") || 
+                       lowerMessage.contains("cannot connect") ||
+                       lowerMessage.contains("service is not running") ||
+                       lowerMessage.contains("connection refused") ||
+                       lowerMessage.contains("timeout")) {
+                // Service communication errors should return 500 with clear message
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+                error = "Internal Server Error";
+                response.put("errorCode", "SERVICE_UNAVAILABLE");
+                log.warn("Service communication error: {}", message);
             } else {
                 log.debug("Using default 400 Bad Request for: {}", message);
             }

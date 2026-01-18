@@ -35,8 +35,11 @@ export const teamsApi = {
   /**
    * Add member to team
    */
-  addMember: async (teamId: number, userId: number): Promise<void> => {
-    await apiClient.post(API_CONFIG.ENDPOINTS.TEAMS.ADD_MEMBER(teamId), { userId });
+  addMember: async (teamId: number, userId: number, role?: string): Promise<void> => {
+    await apiClient.post(API_CONFIG.ENDPOINTS.TEAMS.ADD_MEMBER(teamId), { 
+      userId,
+      role: role || 'MEMBER' // OWNER, ADMIN, or MEMBER (default)
+    });
   },
 
   /**

@@ -59,9 +59,9 @@ public class TaskController {
     
     /**
      * Create a new task
-     * POST /api/tasks
+     * POST /api/tasks or /api/tasks/
      */
-    @PostMapping
+    @PostMapping(value = {"", "/"})
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Create task", description = "Creates a new task. All roles can create tasks.")
     public ResponseEntity<TaskResponse> createTask(
@@ -72,8 +72,12 @@ public class TaskController {
             String role = getRole(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (role == null || role.trim().isEmpty()) {
+                throw new RuntimeException("Access denied: User role is missing from token. Please log out and log back in.");
+            }
+            
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Your account may not be associated with an organization yet, or you're using an old token. Please log out and log back in to refresh your authentication token.");
             }
             
             TaskResponse task = taskService.createTask(request, userId, organizationId, role);
@@ -103,8 +107,8 @@ public class TaskController {
                 throw new RuntimeException("User ID is required");
             }
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             Long assignedByUserId = getUserId(httpRequest);
@@ -136,8 +140,8 @@ public class TaskController {
                 throw new RuntimeException("Status is required");
             }
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             TaskResponse task = taskService.updateTaskStatus(id, status, userId, organizationId, role);
@@ -162,8 +166,8 @@ public class TaskController {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             TaskCommentResponse comment = taskService.addComment(id, request, userId, organizationId);
@@ -186,8 +190,8 @@ public class TaskController {
         try {
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             List<TaskResponse> tasks = taskService.getChannelTasks(channelId, organizationId);
@@ -210,8 +214,8 @@ public class TaskController {
         try {
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             TaskResponse task = taskService.getTask(id, organizationId);
@@ -223,17 +227,17 @@ public class TaskController {
     
     /**
      * Get all tasks
-     * GET /api/tasks
+     * GET /api/tasks or /api/tasks/
      */
-    @GetMapping
+    @GetMapping(value = {"", "/"})
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get all tasks", description = "Retrieves all tasks in the organization.")
     public ResponseEntity<List<TaskResponse>> getAllTasks(HttpServletRequest httpRequest) {
         try {
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             List<TaskResponse> tasks = taskService.getAllTasks(organizationId);
@@ -255,8 +259,8 @@ public class TaskController {
             Long userId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (organizationId == null || organizationId == 0) {
+                throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
             List<TaskResponse> tasks = taskService.getMyTasks(userId, organizationId);

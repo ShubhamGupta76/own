@@ -50,6 +50,8 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.setConcurrency(3);
+        // Don't block startup if Kafka is unavailable
+        factory.setAutoStartup(true);
         return factory;
     }
     

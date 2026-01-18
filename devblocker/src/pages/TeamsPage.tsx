@@ -5,9 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { teamsApi, channelsApi } from '../api';
+import { teamsApi, channelsApi, userApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
-import type { Team, Channel } from '../types/api';
+import type { Team, Channel, User } from '../types/api';
 
 export const TeamsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +20,13 @@ export const TeamsPage: React.FC = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Add member modal state
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [organizationMembers, setOrganizationMembers] = useState<User[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const [addMemberError, setAddMemberError] = useState('');
+  const [isAddingMember, setIsAddingMember] = useState(false);
 
   // Fetch teams on mount
   useEffect(() => {
@@ -102,6 +109,54 @@ export const TeamsPage: React.FC = () => {
     }
   };
 
+  // Load organization members for the add member modal
+  const loadOrganizationMembers = async () => {
+    try {
+      setIsLoadingMembers(true);
+      setAddMemberError('');
+      const members = await userApi.getOrganizationMembers();
+      setOrganizationMembers(members);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setAddMemberError(errorMessage || 'Failed to load organization members');
+      console.error('Error loading organization members:', err);
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  };
+
+  // Handle adding a member to the team
+  const handleAddMember = async (userId: number) => {
+    if (!selectedTeam) return;
+    
+    try {
+      setIsAddingMember(true);
+      setAddMemberError('');
+      
+      await teamsApi.addMember(selectedTeam.id, userId, 'MEMBER');
+      
+      // Success - close modal and refresh teams
+      setShowAddMemberModal(false);
+      setOrganizationMembers([]);
+      
+      // Refresh teams list
+      const teamList = await teamsApi.getMyTeams();
+      setTeams(teamList);
+      
+      // Re-select the current team
+      const updatedTeam = teamList.find((t) => t.id === selectedTeam.id);
+      if (updatedTeam) {
+        setSelectedTeam(updatedTeam);
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setAddMemberError(errorMessage || 'Failed to add member to team');
+      console.error('Error adding team member:', err);
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -151,8 +206,20 @@ export const TeamsPage: React.FC = () => {
     <div className="flex h-full">
       {/* Teams Sidebar */}
       <div className="w-64 border-r border-gray-200 bg-white overflow-y-auto">
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Teams</h2>
+          {selectedTeam && (user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+            <button
+              onClick={() => {
+                setShowAddMemberModal(true);
+                loadOrganizationMembers();
+              }}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              title="Add member to team"
+            >
+              + Member
+            </button>
+          )}
         </div>
         <ul className="divide-y divide-gray-200">
           {teams.map((team) => (
@@ -238,6 +305,78 @@ export const TeamsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Add Member Modal */}
+      {showAddMemberModal && selectedTeam && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Add Member to {selectedTeam.name}
+              </h3>
+            </div>
+            
+            <div className="p-6 flex-1 overflow-y-auto">
+              {addMemberError && (
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {addMemberError}
+                </div>
+              )}
+              
+              {isLoadingMembers ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-600">Loading members...</p>
+                </div>
+              ) : organizationMembers.length === 0 ? (
+                <p className="text-sm text-gray-600 text-center py-4">No organization members found.</p>
+              ) : (
+                <div className="space-y-2">
+                  {organizationMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium mr-3">
+                          {member.firstName?.charAt(0) || member.email.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {member.firstName} {member.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">{member.email}</p>
+                          <p className="text-xs text-gray-400">{member.role}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAddMember(member.id)}
+                        disabled={isAddingMember}
+                        className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isAddingMember ? 'Adding...' : 'Add'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowAddMemberModal(false);
+                  setAddMemberError('');
+                  setOrganizationMembers([]);
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
