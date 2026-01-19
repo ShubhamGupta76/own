@@ -5,9 +5,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { chatApi } from '../api';
+import { chatApi, userApi } from '../api';
 import { wsManager } from '../services/websocket';
-import type { Message, ChatEvent, SendMessageRequest } from '../types/api';
+import { useAuth } from '../contexts/AuthContext';
+import type { Message, ChatEvent, SendMessageRequest, User } from '../types/api';
 
 interface ChatPageProps {
   channelId?: number;
@@ -17,14 +18,45 @@ interface ChatPageProps {
 
 export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType = 'channel' }) => {
   const { userId: routeUserId } = useParams<{ userId?: string }>();
+  const { user: currentUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userMap, setUserMap] = useState<Map<number, User>>(new Map());
+  const [currentChatRoomId, setCurrentChatRoomId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const actualUserId = userId || (routeUserId ? Number(routeUserId) : undefined);
   const actualRoomType = roomType || (channelId ? 'channel' : 'direct');
   const roomId = channelId || actualUserId || 0;
+
+  // Fetch user details for message senders
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (messages.length === 0) return;
+      
+      const senderIds = new Set(messages.map(m => m.senderId));
+      const missingIds = Array.from(senderIds).filter(id => !userMap.has(id));
+      
+      if (missingIds.length === 0) return;
+      
+      try {
+        // Fetch organization members to get user details
+        const members = await userApi.getOrganizationMembers();
+        const newUserMap = new Map(userMap);
+        members.forEach(user => {
+          if (senderIds.has(user.id)) {
+            newUserMap.set(user.id, user);
+          }
+        });
+        setUserMap(newUserMap);
+      } catch (err) {
+        console.error('Error fetching user details:', err);
+      }
+    };
+    
+    fetchUserDetails();
+  }, [messages, userMap]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -49,6 +81,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
         // Handle both formats: array directly or PaginatedResponse with content
         const messagesArray = Array.isArray(response) ? response : (response.content || []);
         setMessages(messagesArray);
+        
+        // Store the chatRoomId from the first message (all messages in a chat have the same chatRoomId)
+        if (messagesArray.length > 0 && messagesArray[0].chatRoomId) {
+          setCurrentChatRoomId(messagesArray[0].chatRoomId);
+        }
       } catch (err: any) {
         const status = err.response?.status;
         const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to load messages';
@@ -75,7 +112,61 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
     if (roomId > 0) {
       wsManager.connectToChat(roomId, actualRoomType, (event: ChatEvent) => {
         if (event.type === 'MESSAGE_RECEIVED' && event.message) {
-          setMessages((prev) => [...prev, event.message!]);
+          const message = event.message;
+          
+          // For direct chats, accept messages from either participant
+          // The backend broadcasts to both users' topics, so we receive messages for all our direct chats
+          // We filter to only show messages from the chat we're currently viewing
+          if (actualRoomType === 'direct' && actualUserId) {
+            // Accept message if:
+            // 1. It belongs to the current chat room (if we know it), OR
+            // 2. The sender is the other user we're chatting with, OR
+            // 3. The sender is the current user (we sent it)
+            const isFromOtherUser = message.senderId === actualUserId;
+            const isFromCurrentUser = message.senderId === currentUser?.id;
+            const isFromCurrentChat = currentChatRoomId ? message.chatRoomId === currentChatRoomId : true;
+            
+            if ((isFromOtherUser || isFromCurrentUser) && isFromCurrentChat) {
+              setMessages((prev) => {
+                // Avoid duplicates
+                if (prev.some(m => m.id === message.id)) {
+                  return prev;
+                }
+                // Update chatRoomId if we don't have it yet
+                if (!currentChatRoomId && message.chatRoomId) {
+                  setCurrentChatRoomId(message.chatRoomId);
+                }
+                console.log('Adding message to chat:', {
+                  messageId: message.id,
+                  senderId: message.senderId,
+                  content: message.content.substring(0, 50),
+                  chatRoomId: message.chatRoomId
+                });
+                return [...prev, message];
+              });
+            } else {
+              console.log('Filtered out message (not from current chat):', {
+                messageId: message.id,
+                senderId: message.senderId,
+                chatRoomId: message.chatRoomId,
+                currentChatRoomId,
+                actualUserId,
+                currentUserId: currentUser?.id,
+                isFromOtherUser,
+                isFromCurrentUser,
+                isFromCurrentChat
+              });
+            }
+          } else {
+            // For channels, add all messages (they're already filtered by channel)
+            setMessages((prev) => {
+              // Avoid duplicates
+              if (prev.some(m => m.id === message.id)) {
+                return prev;
+              }
+              return [...prev, message];
+            });
+          }
         }
       });
     }
@@ -85,7 +176,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
         wsManager.disconnectFromChat(roomId, actualRoomType);
       }
     };
-  }, [roomId, actualRoomType]);
+  }, [roomId, actualRoomType, actualUserId, currentUser?.id]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +184,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
 
     try {
       // Use roomId as chatRoomId (backend will handle the mapping)
+      // For direct chats, roomId is the other user's ID
       const chatRoomId = roomId;
 
       const request: SendMessageRequest = {
@@ -101,8 +193,34 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
         messageType: 'TEXT',
       };
 
+      console.log('Sending message:', {
+        chatRoomId,
+        roomId,
+        actualRoomType,
+        actualUserId,
+        content: newMessage.trim().substring(0, 50)
+      });
+
       const message: Message = await chatApi.sendMessage(request);
-      setMessages((prev) => [...prev, message]);
+      
+      console.log('Message sent successfully:', {
+        messageId: message.id,
+        chatRoomId: message.chatRoomId,
+        senderId: message.senderId
+      });
+      
+      // Update chatRoomId if we don't have it yet
+      if (!currentChatRoomId && message.chatRoomId) {
+        setCurrentChatRoomId(message.chatRoomId);
+      }
+      
+      setMessages((prev) => {
+        // Avoid duplicates
+        if (prev.some(m => m.id === message.id)) {
+          return prev;
+        }
+        return [...prev, message];
+      });
       setNewMessage('');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to send message');
@@ -141,26 +259,37 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
             <p className="text-gray-500">No messages yet. Start the conversation!</p>
           </div>
         ) : (
-          messages.map((message) => (
-            <div key={message.id} className="flex items-start space-x-3">
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                {message.senderId.toString().charAt(0)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-sm font-medium text-gray-900">
-                    User {message.senderId}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(message.createdAt).toLocaleTimeString()}
-                  </span>
+          messages.map((message) => {
+            const sender = userMap.get(message.senderId);
+            const senderName = sender 
+              ? (sender.displayName || `${sender.firstName} ${sender.lastName}` || sender.email)
+              : `User ${message.senderId}`;
+            const senderInitial = sender
+              ? (sender.firstName?.charAt(0) || sender.email.charAt(0).toUpperCase())
+              : message.senderId.toString().charAt(0);
+            const isCurrentUser = message.senderId === currentUser?.id;
+            
+            return (
+              <div key={message.id} className={`flex items-start space-x-3 ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                  {senderInitial}
                 </div>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                  {message.content}
+                <div className="flex-1 min-w-0">
+                  <div className={`flex items-center space-x-2 mb-1 ${isCurrentUser ? 'justify-end' : ''}`}>
+                    <span className="text-sm font-medium text-gray-900">
+                      {isCurrentUser ? 'You' : senderName}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(message.createdAt).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className={`text-sm text-gray-700 whitespace-pre-wrap break-words ${isCurrentUser ? 'text-right' : ''}`}>
+                    {message.content}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>

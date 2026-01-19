@@ -43,7 +43,7 @@ export const PrimarySidebar: React.FC = () => {
     },
     { 
       id: 'chat',
-      path: '/app/chat', 
+      path: '/app/chats', 
       icon: <HiOutlineChatAlt2 className="w-6 h-6" />, 
       label: 'Chat',
       roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] as const,
@@ -106,6 +106,10 @@ export const PrimarySidebar: React.FC = () => {
     if (id === 'teams') {
       return location.pathname.startsWith('/app/teams') || 
              location.pathname.includes('/channels/');
+    }
+    if (id === 'chat') {
+      return location.pathname.startsWith('/app/chat') || 
+             location.pathname.startsWith('/app/chats');
     }
     return location.pathname.startsWith(path);
   };

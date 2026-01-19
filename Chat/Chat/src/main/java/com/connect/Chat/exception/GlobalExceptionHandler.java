@@ -6,68 +6,57 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Global Exception Handler for Chat Service
+ * Handles exceptions and returns appropriate HTTP status codes
+ */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-    
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException e) {
-        log.debug("Handling RuntimeException: {}", e.getMessage());
+        log.error("RuntimeException occurred: {}", e.getMessage(), e);
         
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("message", e.getMessage());
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("error", e.getMessage());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
         
-        String message = e.getMessage();
+        // Determine appropriate status code based on error message
         HttpStatus status = HttpStatus.BAD_REQUEST;
-        String error = "Bad Request";
+        String message = e.getMessage();
         
         if (message != null) {
-            String lowerMessage = message.toLowerCase();
-            
-            if (lowerMessage.contains("not found") || 
-                lowerMessage.contains("does not exist")) {
+            if (message.contains("Missing or invalid authorization header") || 
+                message.contains("Invalid token") ||
+                message.contains("Unauthorized")) {
+                status = HttpStatus.UNAUTHORIZED;
+            } else if (message.contains("not found") || 
+                      message.contains("does not exist")) {
                 status = HttpStatus.NOT_FOUND;
-                error = "Not Found";
-                log.debug("Mapped to 404 Not Found: {}", message);
-            } else if (lowerMessage.contains("access denied") || 
-                       lowerMessage.contains("permission") || 
-                       lowerMessage.contains("unauthorized") ||
-                       lowerMessage.contains("organization context is missing")) {
+            } else if (message.contains("Access denied") || 
+                      message.contains("Forbidden")) {
                 status = HttpStatus.FORBIDDEN;
-                error = "Forbidden";
-                log.debug("Mapped to 403 Forbidden: {}", message);
-            } else if (lowerMessage.contains("already exists") || 
-                       lowerMessage.contains("duplicate")) {
-                status = HttpStatus.CONFLICT;
-                error = "Conflict";
-                log.debug("Mapped to 409 Conflict: {}", message);
-            } else {
-                log.debug("Using default 400 Bad Request for: {}", message);
+            } else if (message.contains("Organization not found")) {
+                status = HttpStatus.BAD_REQUEST;
             }
         }
         
-        response.put("status", status.value());
-        response.put("error", error);
-        
-        return ResponseEntity.status(status).body(response);
+        errorResponse.put("status", status.value());
+        return ResponseEntity.status(status).body(errorResponse);
     }
-    
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception e) {
-        log.error("Handling generic exception: {}", e.getMessage(), e);
+        log.error("Unexpected exception occurred: {}", e.getMessage(), e);
         
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("error", "Internal Server Error");
-        response.put("message", e.getMessage());
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("error", "An unexpected error occurred: " + e.getMessage());
+        errorResponse.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
-

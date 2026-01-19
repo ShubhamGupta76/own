@@ -34,28 +34,32 @@ public class EmployeeAuthService {
             validationRequest.put("email", request.getEmail());
             validationRequest.put("password", request.getPassword());
             
-            EmployeeValidationResponse validationResponse = webClient.post()
-                    .uri(userServiceUrl + "/api/employees/validate")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(validationRequest)
-                    .retrieve()
-                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), 
-                            response -> {
-                                // Try to extract error message from response body
+            EmployeeValidationResponse validationResponse;
+            try {
+                // User service returns 401 with EmployeeValidationResponse body when credentials are invalid
+                // Use exchangeToMono to handle 401 responses gracefully
+                validationResponse = webClient.post()
+                        .uri(userServiceUrl + "/api/v1/employees/validate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(validationRequest)
+                        .exchangeToMono(response -> {
+                            if (response.statusCode().is2xxSuccessful()) {
+                                return response.bodyToMono(EmployeeValidationResponse.class);
+                            } else if (response.statusCode().value() == 401) {
+                                // 401 responses contain EmployeeValidationResponse with isValid=false
+                                return response.bodyToMono(EmployeeValidationResponse.class)
+                                        .switchIfEmpty(Mono.just(new EmployeeValidationResponse(null, null, null, null, null, null, false, null, "Invalid email or password")));
+                            } else {
+                                // Other errors
                                 return response.bodyToMono(String.class)
                                         .defaultIfEmpty("Unable to validate employee credentials")
-                                        .flatMap(errorBody -> {
-                                            String errorMsg = "Unable to validate employee credentials. ";
-                                            if (errorBody != null && !errorBody.isEmpty()) {
-                                                errorMsg += errorBody;
-                                            } else {
-                                                errorMsg += "Please ensure the User service is running and the employee account exists.";
-                                            }
-                                            return Mono.error(new RuntimeException(errorMsg));
-                                        });
-                            })
-                    .bodyToMono(EmployeeValidationResponse.class)
-                    .block();
+                                        .flatMap(errorBody -> Mono.error(new RuntimeException("Unable to validate employee credentials: " + errorBody)));
+                            }
+                        })
+                        .block();
+            } catch (org.springframework.web.reactive.function.client.WebClientException e) {
+                throw new RuntimeException("Cannot connect to User service. Please ensure the User service is running at " + userServiceUrl + ". Error: " + e.getMessage());
+            }
             
             if (validationResponse == null) {
                 throw new RuntimeException("Invalid email or password. Unable to validate credentials. Please contact your administrator if you believe this is an error.");

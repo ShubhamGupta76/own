@@ -22,6 +22,7 @@ import { EmployeeProfileSetupPage } from './pages/employee/EmployeeProfileSetupP
 import { TeamsLandingPage } from './pages/TeamsLandingPage';
 import { ChannelView } from './pages/ChannelView';
 import { ChatPage } from './pages/ChatPage';
+import { ChatsPage } from './pages/ChatsPage';
 import { MeetingsPage } from './pages/MeetingsPage';
 import { MeetingRoomPage } from './pages/MeetingRoomPage';
 import { FilesPage } from './pages/FilesPage';
@@ -131,12 +132,18 @@ function App() {
               
               {/* Direct Chat - Not available for EXTERNAL_USER */}
               <Route 
+                path="chats" 
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'EMPLOYEE']}>
+                    <ChatsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="chat" 
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'EMPLOYEE']}>
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      Select a user to start chatting
-                    </div>
+                    <ChatsPage />
                   </ProtectedRoute>
                 } 
               />

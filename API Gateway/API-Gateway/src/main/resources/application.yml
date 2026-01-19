@@ -96,7 +96,7 @@ spring:
           predicates:
             - Path=/chat/**
           filters:
-            - RewritePath=/chat/(?<segment>.*), /api/v1/chat/$\{segment}
+            - RewritePath=/chat/?(?<segment>.*), /api/v1/chat/$\{segment}
         
         
         - id: meeting-service

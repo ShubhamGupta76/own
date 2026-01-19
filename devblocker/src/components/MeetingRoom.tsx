@@ -21,6 +21,8 @@ interface MeetingRoomProps {
   meetingId: number;
   onLeave: () => void;
   participantIds?: number[]; // Initial list of participants
+  audioOnly?: boolean; // Start with audio only (no video)
+  screenShare?: boolean; // Start with screen sharing
 }
 
 interface ParticipantVideo {
@@ -32,7 +34,13 @@ interface ParticipantVideo {
   isLocal: boolean;
 }
 
-export const MeetingRoom: React.FC<MeetingRoomProps> = ({ meetingId, onLeave, participantIds = [] }) => {
+export const MeetingRoom: React.FC<MeetingRoomProps> = ({ 
+  meetingId, 
+  onLeave, 
+  participantIds = [],
+  audioOnly = false,
+  screenShare = false,
+}) => {
   const { user } = useAuth();
   const userId = user?.id || 0;
 
@@ -129,7 +137,19 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ meetingId, onLeave, pa
         setError('');
 
         // Initialize local media stream
-        await initialize(true, true);
+        // Initialize with video/audio based on audioOnly flag
+        await initialize(!audioOnly, true);
+        
+        // If screenShare is requested, start it immediately
+        if (screenShare) {
+          setTimeout(async () => {
+            try {
+              await startScreenShare();
+            } catch (err) {
+              console.error('Failed to start screen share:', err);
+            }
+          }, 1000);
+        }
 
         // Add local participant
         setParticipants((prev) => {
@@ -139,7 +159,7 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ meetingId, onLeave, pa
             displayName: user?.displayName || user?.email || 'You',
             stream: localStream,
             isMuted: false,
-            isVideoEnabled: true,
+            isVideoEnabled: !audioOnly,
             isLocal: true,
           });
           return newMap;
@@ -190,7 +210,7 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ meetingId, onLeave, pa
       leaveWebRTC();
       wsManager.disconnectFromMeeting(meetingId);
     };
-  }, [meetingId, userId]);
+  }, [meetingId, userId, audioOnly, screenShare, initialize, startScreenShare]);
 
   // Update local video element when stream changes
   useEffect(() => {

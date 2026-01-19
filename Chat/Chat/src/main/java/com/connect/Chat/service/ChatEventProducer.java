@@ -28,6 +28,12 @@ public class ChatEventProducer {
                                        Long senderId, String senderRole, 
                                        List<Long> mentionedUserIds, Long organizationId, 
                                        String messageContent) {
+        // Skip Kafka publishing if template is not available (Kafka might be down)
+        if (kafkaTemplate == null) {
+            log.debug("KafkaTemplate not available, skipping event publishing");
+            return;
+        }
+        
         try {
             ChatEvent event = ChatEvent.builder()
                     .eventType("MESSAGE_SENT")
@@ -43,10 +49,21 @@ public class ChatEventProducer {
                     .build();
             
             // Use organizationId as partition key for better distribution
-            kafkaTemplate.send(CHAT_EVENTS_TOPIC, organizationId.toString(), event);
-            log.info("Published MESSAGE_SENT event for messageId: {}, organizationId: {}", messageId, organizationId);
+            // Send asynchronously to avoid blocking if Kafka is unavailable
+            // Use exceptionally() to handle errors immediately without blocking
+            kafkaTemplate.send(CHAT_EVENTS_TOPIC, organizationId.toString(), event)
+                    .exceptionally(ex -> {
+                        log.warn("Failed to publish MESSAGE_SENT event for messageId: {}, organizationId: {} - {}", 
+                                messageId, organizationId, ex.getMessage());
+                        return null; // Return null to indicate failure
+                    })
+                    .thenAccept(result -> {
+                        if (result != null) {
+                            log.debug("Published MESSAGE_SENT event for messageId: {}, organizationId: {}", messageId, organizationId);
+                        }
+                    });
         } catch (Exception e) {
-            log.error("Failed to publish MESSAGE_SENT event: {}", e.getMessage(), e);
+            log.warn("Failed to publish MESSAGE_SENT event: {} - continuing without publishing", e.getMessage());
             // Don't throw exception - event publishing failure shouldn't break the main flow
         }
     }

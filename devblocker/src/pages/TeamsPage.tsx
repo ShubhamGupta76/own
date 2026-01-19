@@ -14,6 +14,13 @@ export const TeamsPage: React.FC = () => {
   const { teamId, channelId } = useParams<{ teamId?: string; channelId?: string }>();
   const { user } = useAuth();
   
+  // Debug: Log user role to verify it's being read correctly
+  React.useEffect(() => {
+    if (user) {
+      console.log('TeamsPage - User role:', user.role, 'User:', user);
+    }
+  }, [user]);
+  
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -127,7 +134,10 @@ export const TeamsPage: React.FC = () => {
 
   // Handle adding a member to the team
   const handleAddMember = async (userId: number) => {
-    if (!selectedTeam) return;
+    if (!selectedTeam) {
+      setAddMemberError('No team selected');
+      return;
+    }
     
     try {
       setIsAddingMember(true);
@@ -135,11 +145,10 @@ export const TeamsPage: React.FC = () => {
       
       await teamsApi.addMember(selectedTeam.id, userId, 'MEMBER');
       
-      // Success - close modal and refresh teams
-      setShowAddMemberModal(false);
-      setOrganizationMembers([]);
+      // Success - remove the added user from the list
+      setOrganizationMembers((prev) => prev.filter((m) => m.id !== userId));
       
-      // Refresh teams list
+      // Refresh teams list to reflect the new member
       const teamList = await teamsApi.getMyTeams();
       setTeams(teamList);
       
@@ -148,9 +157,24 @@ export const TeamsPage: React.FC = () => {
       if (updatedTeam) {
         setSelectedTeam(updatedTeam);
       }
+      
+      // Show success message (optional - you can add a toast notification here)
+      // Keep modal open so user can add more members
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
-      setAddMemberError(errorMessage || 'Failed to add member to team');
+      const status = err.response?.status;
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to add member to team';
+      
+      if (status === 403) {
+        setAddMemberError('Access denied: You do not have permission to add members to this team.');
+      } else if (status === 404) {
+        setAddMemberError('Team not found or user not found.');
+      } else if (errorMessage.includes('already a member')) {
+        setAddMemberError('This user is already a member of the team.');
+        // Remove from list since they're already a member
+        setOrganizationMembers((prev) => prev.filter((m) => m.id !== userId));
+      } else {
+        setAddMemberError(errorMessage);
+      }
       console.error('Error adding team member:', err);
     } finally {
       setIsAddingMember(false);
@@ -206,42 +230,66 @@ export const TeamsPage: React.FC = () => {
     <div className="flex h-full">
       {/* Teams Sidebar */}
       <div className="w-64 border-r border-gray-200 bg-white overflow-y-auto">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Teams</h2>
-          {selectedTeam && (user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
-            <button
-              onClick={() => {
-                setShowAddMemberModal(true);
-                loadOrganizationMembers();
-              }}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-              title="Add member to team"
-            >
-              + Member
-            </button>
+        <div className="p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Teams</h2>
+          {selectedTeam && (
+            <div className="space-y-2">
+              {(user?.role === 'ADMIN' || user?.role === 'MANAGER') ? (
+                <button
+                  onClick={() => {
+                    setShowAddMemberModal(true);
+                    loadOrganizationMembers();
+                  }}
+                  className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center"
+                  title="Add member to team"
+                >
+                  <span className="mr-1">+</span> Add Members
+                </button>
+              ) : (
+                <div className="text-xs text-gray-500 py-1">
+                  Only ADMIN/MANAGER can add members
+                </div>
+              )}
+            </div>
           )}
         </div>
         <ul className="divide-y divide-gray-200">
           {teams.map((team) => (
-            <li key={team.id}>
-              <button
-                onClick={() => handleTeamSelect(team)}
-                className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
-                  selectedTeam?.id === team.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''
-                }`}
-              >
-                <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-medium mr-3">
-                    {team.name.charAt(0).toUpperCase()}
+            <li key={team.id} className="group">
+              <div className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
+                selectedTeam?.id === team.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''
+              }`}>
+                <button
+                  onClick={() => handleTeamSelect(team)}
+                  className="w-full"
+                >
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-medium mr-3">
+                      {team.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{team.name}</p>
+                      {team.description && (
+                        <p className="text-xs text-gray-500 truncate">{team.description}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{team.name}</p>
-                    {team.description && (
-                      <p className="text-xs text-gray-500 truncate">{team.description}</p>
-                    )}
+                </button>
+                {selectedTeam?.id === team.id && (user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAddMemberModal(true);
+                        loadOrganizationMembers();
+                      }}
+                      className="w-full text-left text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      + Add Member
+                    </button>
                   </div>
-                </div>
-              </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>

@@ -9,6 +9,7 @@ import com.connect.Chat.repository.ChatPolicyRepository;
 import com.connect.Chat.repository.ChatRoomRepository;
 import com.connect.Chat.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ChatService {
     
     private final MessageRepository messageRepository;
@@ -50,10 +53,69 @@ public class ChatService {
             throw new RuntimeException("Chat is disabled for your organization");
         }
         
-        // Verify chat room exists and belongs to organization
-        ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
-                .orElseThrow(() -> new RuntimeException("Chat room not found"));
+        // Resolve chat room - request.chatRoomId might be:
+        // 1. Actual ChatRoom ID
+        // 2. Channel ID (for channel chats)
+        // 3. User ID (for direct chats - frontend sends userId as chatRoomId)
+        ChatRoom chatRoom;
         
+        // First, try to find by ChatRoom ID (fastest lookup)
+        Optional<ChatRoom> roomById = chatRoomRepository.findById(request.getChatRoomId());
+        if (roomById.isPresent()) {
+            chatRoom = roomById.get();
+            // Verify it belongs to the organization
+            if (!chatRoom.getOrganizationId().equals(organizationId)) {
+                throw new RuntimeException("Access denied: Chat room does not belong to your organization");
+            }
+        } else {
+            // Not found by ID, try to find by channel ID (for channel chats)
+            Optional<ChatRoom> roomByChannel = chatRoomRepository
+                    .findByRoomTypeAndRoomIdAndOrganizationId(
+                            ChatRoom.RoomType.CHANNEL, 
+                            request.getChatRoomId(), 
+                            organizationId);
+            if (roomByChannel.isPresent()) {
+                chatRoom = roomByChannel.get();
+            } else {
+                // Might be a direct chat - check if chatRoomId is a userId
+                // For direct chats, frontend sends the other user's ID as chatRoomId
+                Long otherUserId = request.getChatRoomId();
+                
+                // Validate that otherUserId is different from senderId (can't chat with yourself)
+                if (otherUserId.equals(senderId)) {
+                    throw new RuntimeException("Cannot send message to yourself");
+                }
+                
+                // Use consistent ordering to find/create the direct chat room
+                Long user1Id = senderId < otherUserId ? senderId : otherUserId;
+                Long user2Id = senderId < otherUserId ? otherUserId : senderId;
+                
+                Optional<ChatRoom> directRoom = chatRoomRepository.findDirectChatRoom(
+                        user1Id, user2Id, organizationId);
+                
+                if (directRoom.isPresent()) {
+                    chatRoom = directRoom.get();
+                } else {
+                    // Create new direct chat room if it doesn't exist
+                    try {
+                        chatRoom = ChatRoom.builder()
+                                .roomType(ChatRoom.RoomType.DIRECT)
+                                .roomId(null) // Direct chats don't have a room ID
+                                .user1Id(user1Id)
+                                .user2Id(user2Id)
+                                .organizationId(organizationId)
+                                .build();
+                        chatRoom = chatRoomRepository.save(chatRoom);
+                    } catch (Exception e) {
+                        // If save fails (e.g., unique constraint), try to find again (race condition)
+                        chatRoom = chatRoomRepository.findDirectChatRoom(user1Id, user2Id, organizationId)
+                                .orElseThrow(() -> new RuntimeException("Failed to create or find direct chat room: " + e.getMessage()));
+                    }
+                }
+            }
+        }
+        
+        // Final verification
         if (!chatRoom.getOrganizationId().equals(organizationId)) {
             throw new RuntimeException("Access denied: Chat room does not belong to your organization");
         }
@@ -71,7 +133,7 @@ public class ChatService {
         
         // Create and save message
         Message message = Message.builder()
-                .chatRoomId(request.getChatRoomId())
+                .chatRoomId(chatRoom.getId()) // Use actual ChatRoom ID, not channel ID
                 .senderId(senderId)
                 .senderRole(roleEnum)
                 .organizationId(organizationId)
@@ -121,13 +183,12 @@ public class ChatService {
     
     /**
      * Get messages for a channel
+     * Creates chat room if it doesn't exist
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MessageResponse> getChannelMessages(Long channelId, Long organizationId, int page, int size) {
-        // Find or create chat room for channel
-        ChatRoom chatRoom = chatRoomRepository
-                .findByRoomTypeAndRoomIdAndOrganizationId(ChatRoom.RoomType.CHANNEL, channelId, organizationId)
-                .orElseThrow(() -> new RuntimeException("Channel chat room not found"));
+        // Get or create chat room for channel
+        ChatRoom chatRoom = getOrCreateChannelRoom(channelId, organizationId);
         
         Pageable pageable = PageRequest.of(page, size);
         Page<Message> messages = messageRepository.findByChatRoomIdOrderByCreatedAtDesc(chatRoom.getId(), pageable);
@@ -139,18 +200,39 @@ public class ChatService {
     
     /**
      * Get messages for direct chat with a user
+     * Creates chat room if it doesn't exist (requires write transaction)
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MessageResponse> getUserMessages(Long userId, Long currentUserId, Long organizationId, int page, int size) {
+        // Validate inputs
+        if (userId == null || userId <= 0) {
+            throw new RuntimeException("Invalid user ID: " + userId);
+        }
+        if (currentUserId == null || currentUserId <= 0) {
+            throw new RuntimeException("Invalid current user ID");
+        }
+        if (organizationId == null || organizationId <= 0) {
+            throw new RuntimeException("Invalid organization ID");
+        }
+        
+        // Prevent users from chatting with themselves
+        if (userId.equals(currentUserId)) {
+            throw new RuntimeException("Cannot create direct chat with yourself");
+        }
+        
         // Find or create direct chat room
-        ChatRoom chatRoom = chatRoomRepository.findDirectChatRoom(currentUserId, userId, organizationId)
+        // Use consistent ordering (smaller ID first) to avoid duplicate chat rooms
+        Long user1Id = currentUserId < userId ? currentUserId : userId;
+        Long user2Id = currentUserId < userId ? userId : currentUserId;
+        
+        ChatRoom chatRoom = chatRoomRepository.findDirectChatRoom(user1Id, user2Id, organizationId)
                 .orElseGet(() -> {
                     // Create new direct chat room if it doesn't exist
                     ChatRoom newRoom = ChatRoom.builder()
                             .roomType(ChatRoom.RoomType.DIRECT)
-                            .roomId(null)
-                            .user1Id(currentUserId)
-                            .user2Id(userId)
+                            .roomId(null) // Direct chats don't have a room ID
+                            .user1Id(user1Id)
+                            .user2Id(user2Id)
                             .organizationId(organizationId)
                             .build();
                     return chatRoomRepository.save(newRoom);

@@ -14,7 +14,10 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "chat_rooms", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"room_type", "room_id", "organization_id"})
+    // For CHANNEL and TEAM: unique by room_type, room_id, organization_id
+    @UniqueConstraint(name = "uk_room_type_room_id_org", columnNames = {"room_type", "room_id", "organization_id"}),
+    // For DIRECT: unique by room_type, user1_id, user2_id, organization_id
+    @UniqueConstraint(name = "uk_direct_chat_users", columnNames = {"room_type", "user1_id", "user2_id", "organization_id"})
 })
 @Data
 @Builder
@@ -30,7 +33,7 @@ public class ChatRoom {
     @Enumerated(EnumType.STRING)
     private RoomType roomType; // CHANNEL, TEAM, DIRECT
     
-    @Column(name = "room_id", nullable = false)
+    @Column(name = "room_id", nullable = true)
     private Long roomId; // Channel ID, Team ID, or null for direct chat
     
     @Column(name = "user1_id")

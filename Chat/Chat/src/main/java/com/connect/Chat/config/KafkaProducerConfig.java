@@ -28,9 +28,18 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        configProps.put(ProducerConfig.ACKS_CONFIG, "all");
-        configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
-        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        // Use "1" instead of "all" for faster acknowledgment (less blocking)
+        configProps.put(ProducerConfig.ACKS_CONFIG, "1");
+        // Reduce retries to fail faster when Kafka is unavailable
+        configProps.put(ProducerConfig.RETRIES_CONFIG, 0);
+        // Timeout configurations to prevent blocking
+        configProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 3000);
+        configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 5000);
+        configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 2000);
+        // Connection timeout
+        configProps.put(ProducerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG, 10000);
+        // Disable idempotence to reduce overhead when Kafka is down
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, false);
         return new DefaultKafkaProducerFactory<>(configProps);
     }
     

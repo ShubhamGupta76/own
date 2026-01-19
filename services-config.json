@@ -1,0 +1,93 @@
+{
+  "services": [
+    {
+      "name": "Auth",
+      "port": 8101,
+      "path": "Auth\\Auth",
+      "order": 1,
+      "required": true,
+      "description": "Authentication service - must start first"
+    },
+    {
+      "name": "User",
+      "port": 8102,
+      "path": "User\\User",
+      "order": 2,
+      "required": true,
+      "description": "User management service"
+    },
+    {
+      "name": "Team",
+      "port": 8103,
+      "path": "Team\\Team",
+      "order": 3,
+      "required": false,
+      "description": "Team management service"
+    },
+    {
+      "name": "Channel",
+      "port": 8104,
+      "path": "Channel\\Channel",
+      "order": 4,
+      "required": false,
+      "description": "Channel management service"
+    },
+    {
+      "name": "Chat",
+      "port": 8105,
+      "path": "Chat\\Chat",
+      "order": 5,
+      "required": false,
+      "description": "Chat service"
+    },
+    {
+      "name": "Meeting",
+      "port": 8106,
+      "path": "Meeting\\Meeting",
+      "order": 6,
+      "required": false,
+      "description": "Meeting service"
+    },
+    {
+      "name": "File",
+      "port": 8107,
+      "path": "File\\File",
+      "order": 7,
+      "required": false,
+      "description": "File management service"
+    },
+    {
+      "name": "Notification",
+      "port": 8108,
+      "path": "Notification\\Notification",
+      "order": 8,
+      "required": false,
+      "description": "Notification service"
+    },
+    {
+      "name": "Search",
+      "port": 8109,
+      "path": "Search\\Search",
+      "order": 9,
+      "required": false,
+      "description": "Search service"
+    },
+    {
+      "name": "Task",
+      "port": 8110,
+      "path": "Task\\Task",
+      "order": 10,
+      "required": false,
+      "description": "Task management service"
+    }
+  ],
+  "gateway": {
+    "name": "API Gateway",
+    "port": 8080,
+    "path": "API Gateway\\API-Gateway",
+    "order": 99,
+    "required": true,
+    "description": "API Gateway - should start last"
+  }
+}
+

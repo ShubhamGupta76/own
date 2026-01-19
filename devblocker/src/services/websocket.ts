@@ -11,7 +11,7 @@ import type { ChatEvent, NotificationEvent, Message, WebRTCSignalingMessage } fr
  * WebSocket connection manager
  */
 class WebSocketManager {
-  private chatConnections: Map<number, WebSocket> = new Map(); // channelId/userId -> WebSocket
+  private chatConnections: Map<number, Client> = new Map(); // channelId/userId -> STOMP Client
   private notificationConnection: Client | null = null;
   private meetingConnections: Map<number, WebSocket> = new Map(); // meetingId -> WebSocket
   private chatCallbacks: Map<number, ((event: ChatEvent) => void)[]> = new Map();
@@ -19,7 +19,7 @@ class WebSocketManager {
   private meetingCallbacks: Map<number, ((message: WebRTCSignalingMessage) => void)[]> = new Map();
 
   /**
-   * Connect to chat WebSocket (channel or direct)
+   * Connect to chat WebSocket (channel or direct) using STOMP
    */
   connectToChat(roomId: number, roomType: 'channel' | 'direct', onMessage: (event: ChatEvent) => void): void {
     // Close existing connection if any
@@ -37,62 +37,83 @@ class WebSocketManager {
       return;
     }
 
-    // Build WebSocket URL
-    const wsUrl = roomType === 'channel'
-      ? `${API_CONFIG.WS_BASE_URL}/ws/chat?token=${token}&channelId=${roomId}`
-      : `${API_CONFIG.WS_BASE_URL}/ws/chat?token=${token}&userId=${userId}&directUserId=${roomId}`;
+    // Build WebSocket URL - SockJS endpoint
+    const wsUrl = `${API_CONFIG.WS_BASE_URL}/ws/chat?token=${encodeURIComponent(token)}&${roomType === 'channel' ? `channelId=${roomId}` : `userId=${userId}&directUserId=${roomId}`}`;
 
     try {
-      const ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        console.log(`WebSocket connected for ${roomType} ${roomId}`);
-        
-        // Subscribe to topic
-        const topic = roomType === 'channel'
-          ? API_CONFIG.WS_TOPICS.CHAT_CHANNEL(roomId)
-          : API_CONFIG.WS_TOPICS.CHAT_USER(userId);
-
-        ws.send(JSON.stringify({
-          type: 'SUBSCRIBE',
-          destination: topic,
-        }));
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
+      const client = new Client({
+        brokerURL: wsUrl,
+        connectHeaders: {
+          Authorization: `Bearer ${token}`,
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        onConnect: (frame) => {
+          console.log(`Chat STOMP WebSocket connected for ${roomType} ${roomId}`, frame);
           
-          // Handle different message formats
-          if (data.type === 'MESSAGE') {
-            onMessage({
-              type: 'MESSAGE_RECEIVED',
-              message: data.payload as Message,
-              chatRoomId: roomId,
+          // Subscribe to topic
+          const topic = roomType === 'channel'
+            ? API_CONFIG.WS_TOPICS.CHAT_CHANNEL(roomId)
+            : API_CONFIG.WS_TOPICS.CHAT_USER(userId);
+          
+          if (client.connected) {
+            client.subscribe(topic, (message) => {
+              try {
+                console.log(`Received WebSocket message on topic ${topic}:`, message.body);
+                const data = JSON.parse(message.body);
+                
+                // Handle different message formats
+                let messageObj: Message | null = null;
+                
+                if (data.type === 'MESSAGE') {
+                  messageObj = data.payload as Message;
+                } else if (data.message) {
+                  messageObj = data.message as Message;
+                } else if (data.id || data.content) {
+                  messageObj = data as Message;
+                }
+                
+                if (messageObj) {
+                  console.log('Parsed message object:', {
+                    id: messageObj.id,
+                    senderId: messageObj.senderId,
+                    chatRoomId: messageObj.chatRoomId,
+                    content: messageObj.content?.substring(0, 50)
+                  });
+                  onMessage({
+                    type: 'MESSAGE_RECEIVED',
+                    message: messageObj,
+                    chatRoomId: roomId,
+                  });
+                } else {
+                  console.warn('Could not parse message object from:', data);
+                }
+              } catch (error) {
+                console.error('Error parsing chat message:', error, message.body);
+              }
             });
-          } else if (data.message) {
-            // Direct message object
-            onMessage({
-              type: 'MESSAGE_RECEIVED',
-              message: data.message as Message,
-              chatRoomId: roomId,
-            });
+            console.log(`Subscribed to chat topic: ${topic} for ${roomType} ${roomId}`);
+          } else {
+            console.warn('Client not connected, cannot subscribe to topic:', topic);
           }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
+        },
+        onStompError: (frame) => {
+          console.error(`STOMP error for ${roomType} ${roomId}:`, frame.headers['message'] || frame);
+        },
+        onWebSocketError: (error) => {
+          console.error(`Chat WebSocket error for ${roomType} ${roomId}:`, error);
+        },
+        onDisconnect: () => {
+          console.log(`Chat WebSocket disconnected for ${roomType} ${roomId}`);
+          this.chatConnections.delete(roomId);
+        },
+      });
 
-      ws.onerror = (error) => {
-        console.error(`WebSocket error for ${roomType} ${roomId}:`, error);
-      };
-
-      ws.onclose = () => {
-        console.log(`WebSocket closed for ${roomType} ${roomId}`);
-        this.chatConnections.delete(roomId);
-      };
-
-      this.chatConnections.set(roomId, ws);
+      // Activate the client
+      client.activate();
+      
+      this.chatConnections.set(roomId, client);
       
       // Store callback
       if (!this.chatCallbacks.has(roomId)) {
@@ -108,9 +129,11 @@ class WebSocketManager {
    * Disconnect from chat WebSocket
    */
   disconnectFromChat(roomId: number, roomType: 'channel' | 'direct'): void {
-    const ws = this.chatConnections.get(roomId);
-    if (ws) {
-      ws.close();
+    const client = this.chatConnections.get(roomId);
+    if (client) {
+      if (client.connected) {
+        client.deactivate();
+      }
       this.chatConnections.delete(roomId);
       this.chatCallbacks.delete(roomId);
     }
@@ -377,7 +400,11 @@ class WebSocketManager {
    */
   disconnectAll(): void {
     // Close all chat connections
-    this.chatConnections.forEach((ws) => ws.close());
+    this.chatConnections.forEach((client) => {
+      if (client.connected) {
+        client.deactivate();
+      }
+    });
     this.chatConnections.clear();
     this.chatCallbacks.clear();
 

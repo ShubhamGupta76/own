@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { MeetingRoom } from '../components/MeetingRoom';
 import { meetingsApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,10 +13,13 @@ import type { Meeting } from '../types/api';
 
 export const MeetingRoomPage: React.FC = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [participantIds, setParticipantIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const audioOnly = searchParams.get('audioOnly') === 'true';
+  const screenShare = searchParams.get('screenShare') === 'true';
 
   useEffect(() => {
     const loadMeeting = async () => {
@@ -106,6 +109,8 @@ export const MeetingRoomPage: React.FC = () => {
         meetingId={Number(meetingId)}
         participantIds={participantIds}
         onLeave={handleLeave}
+        audioOnly={audioOnly}
+        screenShare={screenShare}
       />
     </div>
   );

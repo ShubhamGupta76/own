@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/chat")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Chat", description = "Employee chat APIs for sending and receiving messages")
 @SecurityRequirement(name = "bearerAuth")
 public class ChatController {
@@ -52,6 +54,15 @@ public class ChatController {
             return authHeader.substring(7);
         }
         throw new RuntimeException("Missing or invalid authorization header");
+    }
+    
+    /**
+     * Validate that userId is not null and is positive
+     */
+    private void validateUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new RuntimeException("Invalid user ID: " + userId);
+        }
     }
     
     /**
@@ -146,17 +157,30 @@ public class ChatController {
             @RequestParam(defaultValue = "50") int size,
             HttpServletRequest httpRequest) {
         try {
+            // Validate userId parameter
+            validateUserId(userId);
+            
             Long currentUserId = getUserId(httpRequest);
             Long organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
-                throw new RuntimeException("Organization not found");
+            if (currentUserId == null || currentUserId <= 0) {
+                throw new RuntimeException("Invalid current user ID");
+            }
+            
+            if (organizationId == null || organizationId <= 0) {
+                throw new RuntimeException("Organization not found in token");
+            }
+            
+            // Prevent users from chatting with themselves
+            if (userId.equals(currentUserId)) {
+                throw new RuntimeException("Cannot create direct chat with yourself");
             }
             
             List<MessageResponse> messages = chatService.getUserMessages(userId, currentUserId, organizationId, page, size);
             return ResponseEntity.ok(messages);
         } catch (RuntimeException e) {
-            throw new RuntimeException(e.getMessage());
+            log.error("Error in getDirectMessages: {}", e.getMessage());
+            throw e; // Let GlobalExceptionHandler handle it
         }
     }
 }
