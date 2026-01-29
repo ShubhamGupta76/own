@@ -114,47 +114,75 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
         if (event.type === 'MESSAGE_RECEIVED' && event.message) {
           const message = event.message;
           
+          console.log('WebSocket message received:', {
+            messageId: message.id,
+            senderId: message.senderId,
+            chatRoomId: message.chatRoomId,
+            currentChatRoomId,
+            actualUserId,
+            currentUserId: currentUser?.id,
+            actualRoomType,
+            content: message.content?.substring(0, 50)
+          });
+          
           // For direct chats, accept messages from either participant
           // The backend broadcasts to both users' topics, so we receive messages for all our direct chats
           // We filter to only show messages from the chat we're currently viewing
-          if (actualRoomType === 'direct' && actualUserId) {
-            // Accept message if:
-            // 1. It belongs to the current chat room (if we know it), OR
-            // 2. The sender is the other user we're chatting with, OR
-            // 3. The sender is the current user (we sent it)
+          if (actualRoomType === 'direct' && actualUserId && currentUser?.id) {
+            // For direct chats, we need to identify if this message belongs to the current chat
+            // Strategy:
+            // 1. If message is from the other user (actualUserId), it's definitely from this chat
+            // 2. If message is from current user, check chatRoomId if we know it
+            // 3. If we don't know chatRoomId yet, accept messages from either participant (first message scenario)
             const isFromOtherUser = message.senderId === actualUserId;
-            const isFromCurrentUser = message.senderId === currentUser?.id;
-            const isFromCurrentChat = currentChatRoomId ? message.chatRoomId === currentChatRoomId : true;
+            const isFromCurrentUser = message.senderId === currentUser.id;
             
-            if ((isFromOtherUser || isFromCurrentUser) && isFromCurrentChat) {
+            // Determine if message belongs to current chat
+            let belongsToCurrentChat = false;
+            
+            if (isFromOtherUser) {
+              // Message from the other user - definitely from this chat
+              belongsToCurrentChat = true;
+            } else if (isFromCurrentUser) {
+              // Message from current user - check chatRoomId if we know it
+              if (currentChatRoomId) {
+                belongsToCurrentChat = (message.chatRoomId === currentChatRoomId || !message.chatRoomId);
+              } else {
+                // We don't know chatRoomId yet - accept it (will be set from this message)
+                belongsToCurrentChat = true;
+              }
+            }
+            
+            if (belongsToCurrentChat) {
               setMessages((prev) => {
                 // Avoid duplicates
                 if (prev.some(m => m.id === message.id)) {
+                  console.log('Message already exists, skipping:', message.id);
                   return prev;
                 }
                 // Update chatRoomId if we don't have it yet
                 if (!currentChatRoomId && message.chatRoomId) {
+                  console.log('Setting currentChatRoomId from message:', message.chatRoomId);
                   setCurrentChatRoomId(message.chatRoomId);
                 }
-                console.log('Adding message to chat:', {
+                console.log('✅ Adding message to chat:', {
                   messageId: message.id,
                   senderId: message.senderId,
-                  content: message.content.substring(0, 50),
+                  content: message.content?.substring(0, 50),
                   chatRoomId: message.chatRoomId
                 });
                 return [...prev, message];
               });
             } else {
-              console.log('Filtered out message (not from current chat):', {
+              console.log('❌ Filtered out message (not from current chat):', {
                 messageId: message.id,
                 senderId: message.senderId,
                 chatRoomId: message.chatRoomId,
                 currentChatRoomId,
                 actualUserId,
-                currentUserId: currentUser?.id,
+                currentUserId: currentUser.id,
                 isFromOtherUser,
-                isFromCurrentUser,
-                isFromCurrentChat
+                isFromCurrentUser
               });
             }
           } else {
@@ -164,6 +192,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
               if (prev.some(m => m.id === message.id)) {
                 return prev;
               }
+              console.log('✅ Adding channel message:', {
+                messageId: message.id,
+                senderId: message.senderId,
+                content: message.content?.substring(0, 50)
+              });
               return [...prev, message];
             });
           }
@@ -176,7 +209,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
         wsManager.disconnectFromChat(roomId, actualRoomType);
       }
     };
-  }, [roomId, actualRoomType, actualUserId, currentUser?.id]);
+  }, [roomId, actualRoomType, actualUserId, currentUser?.id, currentChatRoomId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,0 +1,249 @@
+# Render Blueprint - Deploy all services at once
+# Go to Render Dashboard → New → Blueprint → Connect this file
+
+services:
+  # Database
+  - type: pspg
+    name: devblocker-db
+    plan: free
+    databaseName: devblocker
+    user: devblocker_user
+
+  # Auth Service
+  - type: web
+    name: auth-service
+    env: java
+    buildCommand: cd Auth/Auth && mvn clean package -DskipTests
+    startCommand: cd Auth/Auth && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8101
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false  # Set manually in dashboard
+
+  # User Service
+  - type: web
+    name: user-service
+    env: java
+    buildCommand: cd User/User && mvn clean package -DskipTests
+    startCommand: cd User/User && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8102
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # Team Service
+  - type: web
+    name: team-service
+    env: java
+    buildCommand: cd Team/Team && mvn clean package -DskipTests
+    startCommand: cd Team/Team && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8103
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # Channel Service
+  - type: web
+    name: channel-service
+    env: java
+    buildCommand: cd Channel/Channel && mvn clean package -DskipTests
+    startCommand: cd Channel/Channel && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8104
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # Chat Service
+  - type: web
+    name: chat-service
+    env: java
+    buildCommand: cd Chat/Chat && mvn clean package -DskipTests
+    startCommand: cd Chat/Chat && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8105
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # Meeting Service
+  - type: web
+    name: meeting-service
+    env: java
+    buildCommand: cd Meeting/Meeting && mvn clean package -DskipTests
+    startCommand: cd Meeting/Meeting && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8106
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # File Service
+  - type: web
+    name: file-service
+    env: java
+    buildCommand: cd File/File && mvn clean package -DskipTests
+    startCommand: cd File/File && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8107
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # Notification Service
+  - type: web
+    name: notification-service
+    env: java
+    buildCommand: cd Notification/Notification && mvn clean package -DskipTests
+    startCommand: cd Notification/Notification && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8108
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # Search Service
+  - type: web
+    name: search-service
+    env: java
+    buildCommand: cd Search/Search && mvn clean package -DskipTests
+    startCommand: cd Search/Search && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8109
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # Task Service
+  - type: web
+    name: task-service
+    env: java
+    buildCommand: cd Task/Task && mvn clean package -DskipTests
+    startCommand: cd Task/Task && java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: devblocker-db
+          property: connectionString
+      - key: SERVER_PORT
+        value: 8110
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+
+  # API Gateway
+  - type: web
+    name: api-gateway
+    env: java
+    buildCommand: cd "API Gateway/API-Gateway" && mvn clean package -DskipTests
+    startCommand: cd "API Gateway/API-Gateway" && java -jar target/*.jar
+    envVars:
+      - key: SERVER_PORT
+        value: 8080
+      - key: AUTH_SERVICE_URL
+        fromService:
+          name: auth-service
+          type: web
+          property: host
+      - key: USER_SERVICE_URL
+        fromService:
+          name: user-service
+          type: web
+          property: host
+      - key: TEAM_SERVICE_URL
+        fromService:
+          name: team-service
+          type: web
+          property: host
+      - key: CHANNEL_SERVICE_URL
+        fromService:
+          name: channel-service
+          type: web
+          property: host
+      - key: CHAT_SERVICE_URL
+        fromService:
+          name: chat-service
+          type: web
+          property: host
+      - key: MEETING_SERVICE_URL
+        fromService:
+          name: meeting-service
+          type: web
+          property: host
+      - key: FILE_SERVICE_URL
+        fromService:
+          name: file-service
+          type: web
+          property: host
+      - key: NOTIFICATION_SERVICE_URL
+        fromService:
+          name: notification-service
+          type: web
+          property: host
+      - key: SEARCH_SERVICE_URL
+        fromService:
+          name: search-service
+          type: web
+          property: host
+      - key: TASK_SERVICE_URL
+        fromService:
+          name: task-service
+          type: web
+          property: host
+
+  # Frontend
+  - type: web
+    name: devblocker-frontend
+    env: node
+    buildCommand: cd devblocker && npm install && npm run build
+    staticPublishPath: ./devblocker/dist
+    envVars:
+      - key: VITE_API_GATEWAY_HOST
+        fromService:
+          name: api-gateway
+          type: web
+          property: host
+      - key: VITE_API_GATEWAY_PORT
+        value: 443
+      - key: VITE_API_GATEWAY_PROTOCOL
+        value: https
+
+

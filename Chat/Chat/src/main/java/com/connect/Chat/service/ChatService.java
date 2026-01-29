@@ -171,10 +171,14 @@ public class ChatService {
         // Determine WebSocket topic based on chat room type
         if (chatRoom.getRoomType() == ChatRoom.RoomType.DIRECT) {
             // For direct chat, send to both users
+            log.info("Broadcasting direct message. MessageId: {}, ChatRoomId: {}, User1Id: {}, User2Id: {}, SenderId: {}", 
+                    message.getId(), chatRoom.getId(), chatRoom.getUser1Id(), chatRoom.getUser2Id(), senderId);
             broadcastDirectMessage(messageResponse, chatRoom);
         } else {
             // For channel/team, send to room topic
             String topic = getWebSocketTopic(chatRoom);
+            log.info("Broadcasting channel/team message. MessageId: {}, Topic: {}, ChatRoomId: {}", 
+                    message.getId(), topic, chatRoom.getId());
             messagingTemplate.convertAndSend(topic, messageResponse);
         }
         
@@ -392,8 +396,13 @@ public class ChatService {
      */
     private void broadcastDirectMessage(MessageResponse messageResponse, ChatRoom chatRoom) {
         // Send to both users in direct chat
-        messagingTemplate.convertAndSend("/topic/user/" + chatRoom.getUser1Id(), messageResponse);
-        messagingTemplate.convertAndSend("/topic/user/" + chatRoom.getUser2Id(), messageResponse);
+        String topic1 = "/topic/user/" + chatRoom.getUser1Id();
+        String topic2 = "/topic/user/" + chatRoom.getUser2Id();
+        log.info("Sending direct message to topics: {} and {}", topic1, topic2);
+        messagingTemplate.convertAndSend(topic1, messageResponse);
+        messagingTemplate.convertAndSend(topic2, messageResponse);
+        log.debug("Direct message broadcast completed. MessageId: {}, ChatRoomId: {}", 
+                 messageResponse.getId(), messageResponse.getChatRoomId());
     }
 }
 
