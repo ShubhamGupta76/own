@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TaskCommentResponse {
     
-    private Long id;
-    private Long taskId;
-    private Long createdBy;
+    private String id;
+    private String taskId;
+    private String createdBy;
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

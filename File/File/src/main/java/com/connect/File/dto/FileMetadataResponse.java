@@ -16,16 +16,16 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class FileMetadataResponse {
     
-    private Long id;
+    private String id;
     private String filename;
     private Long size;
     private String contentType;
-    private Long channelId;
-    private Long chatMessageId;
-    private Long uploadedBy;
-    private Long organizationId;
+    private String channelId;
+    private String chatMessageId;
+    private String uploadedBy;
+    private String organizationId;
     private Integer version;
-    private Long lockedBy;
+    private String lockedBy;
     private LocalDateTime lockedAt;
     private Boolean isLocked;
     private LocalDateTime uploadedAt;

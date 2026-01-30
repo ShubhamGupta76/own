@@ -17,13 +17,13 @@ public class SendMessageRequest {
     private String content; // Required for TEXT, optional for other types
     
     @NotNull(message = "Chat room ID is required")
-    private Long chatRoomId;
+    private String chatRoomId;
     
     private Message.MessageType messageType = Message.MessageType.TEXT;
     
     // Metadata fields based on message type
     private String fileUrl; // For FILE type messages
-    private Long fileId; // For FILE type messages
+    private String fileId; // For FILE type messages
     private String linkUrl; // For LINK type messages
     private String emojiCode; // For EMOJI type messages
     private String gifUrl; // For GIF type messages

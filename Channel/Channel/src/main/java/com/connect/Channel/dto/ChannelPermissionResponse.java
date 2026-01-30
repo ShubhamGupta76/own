@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChannelPermissionResponse {
-    private Long id;
-    private Long channelId;
-    private Long userId;
-    private Long teamId;
+    private String id;
+    private String channelId;
+    private String userId;
+    private String teamId;
     private String permissionType;
 }
 

@@ -11,8 +11,8 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Message, ChatEvent, SendMessageRequest, User } from '../types/api';
 
 interface ChatPageProps {
-  channelId?: number;
-  userId?: number;
+  channelId?: string;
+  userId?: string;
   roomType?: 'channel' | 'direct';
 }
 
@@ -23,12 +23,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [userMap, setUserMap] = useState<Map<number, User>>(new Map());
-  const [currentChatRoomId, setCurrentChatRoomId] = useState<number | null>(null);
+  const [userMap, setUserMap] = useState<Map<string, User>>(new Map());
+  const [currentChatRoomId, setCurrentChatRoomId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const actualUserId = userId || (routeUserId ? Number(routeUserId) : undefined);
+  const actualUserId = userId || routeUserId;
   const actualRoomType = roomType || (channelId ? 'channel' : 'direct');
-  const roomId = channelId || actualUserId || 0;
+  const roomId = channelId || actualUserId || '';
 
   // Fetch user details for message senders
   useEffect(() => {
@@ -102,14 +102,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ channelId, userId, roomType 
       }
     };
 
-    if (roomId > 0) {
+    if (roomId) {
       fetchMessages();
     }
   }, [roomId, actualRoomType, channelId, actualUserId]);
 
   // Connect to WebSocket
   useEffect(() => {
-    if (roomId > 0) {
+    if (roomId) {
       wsManager.connectToChat(roomId, actualRoomType, (event: ChatEvent) => {
         if (event.type === 'MESSAGE_RECEIVED' && event.message) {
           const message = event.message;

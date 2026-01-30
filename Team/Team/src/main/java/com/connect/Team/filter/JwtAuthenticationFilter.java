@@ -44,8 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwtUtil.validateToken(token)) {
                 String role = jwtUtil.extractRole(token);
                 String email = jwtUtil.extractEmail(token);
-                Long userId = jwtUtil.extractUserId(token);
-                Long organizationId = jwtUtil.extractOrganizationId(token);
+                String userId = jwtUtil.extractUserId(token);
+                String organizationId = jwtUtil.extractOrganizationId(token);
                 
                 log.info("JWT token processed - UserId: {}, Email: {}, Role: {}, OrganizationId: {}", 
                         userId, email, role, organizationId);
@@ -56,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
                 
-                if (organizationId == null || organizationId == 0) {
+                if (organizationId == null || organizationId.isEmpty()) {
                     log.warn("JWT token missing organizationId for email: {}, userId: {}, role: {}. User may need to log out and log back in.", 
                             email, userId, role);
                 }

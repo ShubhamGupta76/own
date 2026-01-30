@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChannelMemberResponse {
-    private Long id;
-    private Long userId;
-    private Long channelId;
+    private String id;
+    private String userId;
+    private String channelId;
     private LocalDateTime joinedAt;
 }
 

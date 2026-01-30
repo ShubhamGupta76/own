@@ -12,13 +12,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,28 +31,41 @@ public class OrganizationService {
     @Value("${auth.service.url:http://localhost:8101}")
     private String authServiceUrl;
     
-    @Transactional
-    public Organization createOrganization(OrganizationRequest request, Long adminId) {
+    public Organization createOrganization(OrganizationRequest request, String adminId) {
         if (organizationRepository.findByName(request.getName()).isPresent()) {
             throw new RuntimeException("Organization with name " + request.getName() + " already exists");
         }
         
-        if (request.getDomain() != null && !request.getDomain().isEmpty()) {
-            if (organizationRepository.findByDomain(request.getDomain()).isPresent()) {
-                throw new RuntimeException("Organization with domain " + request.getDomain() + " already exists");
+        // Determine domain value - use provided domain or temporary UUID (will be updated to org ID after save)
+        String domainValue = request.getDomain();
+        if (domainValue == null || domainValue.isEmpty()) {
+            // Use temporary UUID to avoid unique index conflict on null
+            domainValue = "temp_" + UUID.randomUUID().toString();
+        } else {
+            // Check if provided domain already exists
+            if (organizationRepository.findByDomain(domainValue).isPresent()) {
+                throw new RuntimeException("Organization with domain " + domainValue + " already exists");
             }
         }
         
         Organization organization = Organization.builder()
                 .name(request.getName())
-                .domain(request.getDomain())
+                .domain(domainValue)
                 .adminId(adminId)
                 .active(true)
                 .build();
         
         organization = organizationRepository.save(organization);
         
+        // If domain was not originally provided, set it to organization ID
+        if (request.getDomain() == null || request.getDomain().isEmpty()) {
+            organization.setDomain(organization.getId());
+            organization = organizationRepository.save(organization);
+            log.info("Set domain to organization ID: {} for organization: {}", organization.getId(), organization.getName());
+        }
+        
         try {
+            // Sync organizationId to Auth service
             syncOrganizationIdToAuthService(adminId, organization.getId());
             log.info("Successfully synced organizationId {} to Auth service for admin {}", organization.getId(), adminId);
         } catch (Exception e) {
@@ -63,28 +75,41 @@ public class OrganizationService {
         return organization;
     }
 
-    @Transactional
-    public OrganizationResponse createOrganizationWithToken(OrganizationRequest request, Long adminId) {
+    public OrganizationResponse createOrganizationWithToken(OrganizationRequest request, String adminId) {
         if (organizationRepository.findByName(request.getName()).isPresent()) {
             throw new RuntimeException("Organization with name " + request.getName() + " already exists");
         }
         
-        if (request.getDomain() != null && !request.getDomain().isEmpty()) {
-            if (organizationRepository.findByDomain(request.getDomain()).isPresent()) {
-                throw new RuntimeException("Organization with domain " + request.getDomain() + " already exists");
+        // Determine domain value - use provided domain or temporary UUID (will be updated to org ID after save)
+        String domainValue = request.getDomain();
+        if (domainValue == null || domainValue.isEmpty()) {
+            // Use temporary UUID to avoid unique index conflict on null
+            domainValue = "temp_" + UUID.randomUUID().toString();
+        } else {
+            // Check if provided domain already exists
+            if (organizationRepository.findByDomain(domainValue).isPresent()) {
+                throw new RuntimeException("Organization with domain " + domainValue + " already exists");
             }
         }
         
         Organization organization = Organization.builder()
                 .name(request.getName())
-                .domain(request.getDomain())
+                .domain(domainValue)
                 .adminId(adminId)
                 .active(true)
                 .build();
         
         organization = organizationRepository.save(organization);
         
+        // If domain was not originally provided, set it to organization ID
+        if (request.getDomain() == null || request.getDomain().isEmpty()) {
+            organization.setDomain(organization.getId());
+            organization = organizationRepository.save(organization);
+            log.info("Set domain to organization ID: {} for organization: {}", organization.getId(), organization.getName());
+        }
+        
         try {
+            // Sync organizationId to Auth service
             AuthResponse authResponse = syncOrganizationIdToAuthService(adminId, organization.getId());
             log.info("Successfully synced organizationId {} to Auth service for admin {}", organization.getId(), adminId);
             
@@ -106,7 +131,7 @@ public class OrganizationService {
         }
     }
     
-    private AuthResponse syncOrganizationIdToAuthService(Long adminId, Long organizationId) {
+    private AuthResponse syncOrganizationIdToAuthService(String adminId, String organizationId) {
         try {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("adminId", adminId);
@@ -166,8 +191,7 @@ public class OrganizationService {
         }
     }
     
-    @Transactional(readOnly = true)
-    public Organization getOrganization(Long organizationId, Long adminId) {
+    public Organization getOrganization(String organizationId, String adminId) {
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
         
@@ -178,8 +202,7 @@ public class OrganizationService {
         return organization;
     }
     
-    @Transactional(readOnly = true)
-    public Organization getOrganizationByAdminId(Long adminId) {
+    public Organization getOrganizationByAdminId(String adminId) {
         return organizationRepository.findByAdminId(adminId)
                 .orElseThrow(() -> new RuntimeException("Organization not found. Please create an organization first."));
     }
@@ -188,8 +211,7 @@ public class OrganizationService {
      * Create User record for admin in User service
      * This ensures the admin has a User record that can be accessed by other services
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void createAdminUserRecord(AuthResponse authResponse, Long organizationId, Long adminId) {
+    private void createAdminUserRecord(AuthResponse authResponse, String organizationId, String adminId) {
         try {
             // Check if user already exists
             if (userRepository.existsByEmailAndOrganizationId(authResponse.getEmail(), organizationId)) {

@@ -1,14 +1,12 @@
 # Render Blueprint - Deploy all services at once
 # Go to Render Dashboard → New → Blueprint → Connect this file
+# 
+# IMPORTANT: Before deploying, set these environment variables in Render Dashboard:
+# - MONGODB_URI (for each service with appropriate database name)
+# - JWT_SECRET (same for all services)
+# - SPRING_KAFKA_BOOTSTRAP_SERVERS (if using Kafka, otherwise leave empty)
 
 services:
-  # Database
-  - type: pspg
-    name: devblocker-db
-    plan: free
-    databaseName: devblocker
-    user: devblocker_user
-
   # Auth Service
   - type: web
     name: auth-service
@@ -16,14 +14,19 @@ services:
     buildCommand: cd Auth/Auth && mvn clean package -DskipTests
     startCommand: cd Auth/Auth && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8101
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
-        sync: false  # Set manually in dashboard
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/auth_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: auth_db
+      - key: JWT_SECRET
+        sync: false  # Set manually: same secret for all services
+      - key: USER_SERVICE_URL
+        fromService:
+          name: user-service
+          type: web
+          property: host
 
   # User Service
   - type: web
@@ -32,13 +35,13 @@ services:
     buildCommand: cd User/User && mvn clean package -DskipTests
     startCommand: cd User/User && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8102
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/user_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: user_db
+      - key: JWT_SECRET
         sync: false
 
   # Team Service
@@ -48,13 +51,13 @@ services:
     buildCommand: cd Team/Team && mvn clean package -DskipTests
     startCommand: cd Team/Team && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8103
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/team_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: team_db
+      - key: JWT_SECRET
         sync: false
 
   # Channel Service
@@ -64,13 +67,13 @@ services:
     buildCommand: cd Channel/Channel && mvn clean package -DskipTests
     startCommand: cd Channel/Channel && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8104
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/channel_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: channel_db
+      - key: JWT_SECRET
         sync: false
 
   # Chat Service
@@ -80,13 +83,13 @@ services:
     buildCommand: cd Chat/Chat && mvn clean package -DskipTests
     startCommand: cd Chat/Chat && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8105
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/chat_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: chat_db
+      - key: JWT_SECRET
         sync: false
 
   # Meeting Service
@@ -96,14 +99,16 @@ services:
     buildCommand: cd Meeting/Meeting && mvn clean package -DskipTests
     startCommand: cd Meeting/Meeting && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8106
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/meeting_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: meeting_db
+      - key: JWT_SECRET
         sync: false
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false  # Optional: Set if using Kafka
 
   # File Service
   - type: web
@@ -112,13 +117,13 @@ services:
     buildCommand: cd File/File && mvn clean package -DskipTests
     startCommand: cd File/File && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8107
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/file_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: file_db
+      - key: JWT_SECRET
         sync: false
 
   # Notification Service
@@ -128,14 +133,16 @@ services:
     buildCommand: cd Notification/Notification && mvn clean package -DskipTests
     startCommand: cd Notification/Notification && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8108
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/notification_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: notification_db
+      - key: JWT_SECRET
         sync: false
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false  # Optional: Set if using Kafka
 
   # Search Service
   - type: web
@@ -144,13 +151,13 @@ services:
     buildCommand: cd Search/Search && mvn clean package -DskipTests
     startCommand: cd Search/Search && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8109
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/search_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: search_db
+      - key: JWT_SECRET
         sync: false
 
   # Task Service
@@ -160,14 +167,16 @@ services:
     buildCommand: cd Task/Task && mvn clean package -DskipTests
     startCommand: cd Task/Task && java -jar target/*.jar
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: devblocker-db
-          property: connectionString
       - key: SERVER_PORT
         value: 8110
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+      - key: MONGODB_URI
+        sync: false  # Set manually: mongodb+srv://username:password@cluster.mongodb.net/task_db?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: task_db
+      - key: JWT_SECRET
         sync: false
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        sync: false  # Optional: Set if using Kafka
 
   # API Gateway
   - type: web
@@ -178,6 +187,8 @@ services:
     envVars:
       - key: SERVER_PORT
         value: 8080
+      - key: JWT_SECRET
+        sync: false  # Must match JWT_SECRET in all services
       - key: AUTH_SERVICE_URL
         fromService:
           name: auth-service
@@ -245,5 +256,3 @@ services:
         value: 443
       - key: VITE_API_GATEWAY_PROTOCOL
         value: https
-
-

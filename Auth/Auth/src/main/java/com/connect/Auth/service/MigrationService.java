@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.HashMap;
@@ -24,7 +23,6 @@ public class MigrationService {
     @Value("${user.service.url:http://localhost:8102}")
     private String userServiceUrl;
     
-    @Transactional
     public Map<String, Object> migrateOrganizationIds() {
         Map<String, Object> result = new HashMap<>();
         int updated = 0;
@@ -40,7 +38,7 @@ public class MigrationService {
                     Map<String, Object> organization = getOrganizationByAdminId(admin.getId());
                     
                     if (organization != null && organization.get("id") != null) {
-                        Long organizationId = Long.valueOf(organization.get("id").toString());
+                        String organizationId = organization.get("id").toString();
                         admin.setOrganizationId(organizationId);
                         adminRepository.save(admin);
                         updated++;
@@ -69,7 +67,7 @@ public class MigrationService {
         return result;
     }
     
-    private Map<String, Object> getOrganizationByAdminId(Long adminId) {
+    private Map<String, Object> getOrganizationByAdminId(String adminId) {
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> result = webClient.get()

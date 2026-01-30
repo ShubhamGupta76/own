@@ -14,11 +14,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EmployeeValidationResponse {
     
-    private Long userId;
+    private String userId;
     private String email;
     private String firstName;
     private String lastName;
-    private Long organizationId;
+    private String organizationId;
     private String role; // Changed from User.Role enum to String for API compatibility
     private Boolean isValid;
     private Boolean isFirstLogin;

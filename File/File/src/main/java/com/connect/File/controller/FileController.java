@@ -37,7 +37,7 @@ public class FileController {
     /**
      * Extract user information from JWT token
      */
-    private Long getUserId(HttpServletRequest request) {
+    private String getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
@@ -47,7 +47,7 @@ public class FileController {
         return jwtUtil.extractRole(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -69,15 +69,15 @@ public class FileController {
     @Operation(summary = "Upload file", description = "Uploads a file to a channel or attaches it to a chat message. Supports file versioning.")
     public ResponseEntity<FileUploadResponse> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(required = false) Long channelId,
-            @RequestParam(required = false) Long chatMessageId,
+            @RequestParam(required = false) String channelId,
+            @RequestParam(required = false) String chatMessageId,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
+            String userId = getUserId(httpRequest);
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -101,12 +101,12 @@ public class FileController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get channel files", description = "Retrieves all files uploaded to a channel.")
     public ResponseEntity<List<FileMetadataResponse>> getChannelFiles(
-            @PathVariable Long channelId,
+            @PathVariable String channelId,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -125,12 +125,12 @@ public class FileController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Download file", description = "Downloads a file by ID.")
     public ResponseEntity<Resource> downloadFile(
-            @PathVariable Long fileId,
+            @PathVariable String fileId,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -154,13 +154,13 @@ public class FileController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Lock file", description = "Locks a file for editing. Only the user who locked it can unlock it.")
     public ResponseEntity<FileMetadataResponse> lockFile(
-            @PathVariable Long fileId,
+            @PathVariable String fileId,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -179,13 +179,13 @@ public class FileController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Unlock file", description = "Unlocks a file. Only the user who locked it can unlock it.")
     public ResponseEntity<FileMetadataResponse> unlockFile(
-            @PathVariable Long fileId,
+            @PathVariable String fileId,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -204,12 +204,12 @@ public class FileController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get file metadata", description = "Retrieves file metadata including lock status and version.")
     public ResponseEntity<FileMetadataResponse> getFileMetadata(
-            @PathVariable Long fileId,
+            @PathVariable String fileId,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             

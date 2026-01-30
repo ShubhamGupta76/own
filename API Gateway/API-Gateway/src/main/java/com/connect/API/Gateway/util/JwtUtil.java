@@ -50,14 +50,13 @@ public class JwtUtil {
     }
     
     /**
-     * Extract userId from token
+     * Extract userId from token (now String - MongoDB ObjectId)
      */
-    public Long extractUserId(String token) {
+    public String extractUserId(String token) {
         return extractClaim(token, claims -> {
             Object userId = claims.get("userId");
             if (userId == null) return null;
-            if (userId instanceof Integer) return ((Integer) userId).longValue();
-            return (Long) userId;
+            return userId.toString();
         });
     }
     
@@ -80,14 +79,13 @@ public class JwtUtil {
     }
     
     /**
-     * Extract organizationId from token
+     * Extract organizationId from token (now String)
      */
-    public Long extractOrganizationId(String token) {
+    public String extractOrganizationId(String token) {
         return extractClaim(token, claims -> {
             Object orgId = claims.get("organizationId");
             if (orgId == null) return null;
-            if (orgId instanceof Integer) return ((Integer) orgId).longValue();
-            return (Long) orgId;
+            return orgId.toString();
         });
     }
     
@@ -122,10 +120,12 @@ public class JwtUtil {
             }
             
             // Verify token signature by parsing
-            extractAllClaims(token);
+            Claims claims = extractAllClaims(token);
+            log.debug("Token validated successfully. Claims: userId={}, email={}, role={}, organizationId={}", 
+                    claims.get("userId"), claims.getSubject(), claims.get("role"), claims.get("organizationId"));
             return true;
         } catch (Exception e) {
-            log.error("Token validation failed: {}", e.getMessage());
+            log.error("Token validation failed: {}", e.getMessage(), e);
             return false;
         }
     }

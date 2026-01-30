@@ -80,7 +80,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({ channelId }) => {
     }
   };
 
-  const handleUpdateStatus = async (taskId: number, status: 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE') => {
+  const handleUpdateStatus = async (taskId: string, status: 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE') => {
     try {
       await tasksApi.updateTaskStatus(taskId, status);
       setTasks((prev) =>
@@ -88,6 +88,9 @@ export const TasksPage: React.FC<TasksPageProps> = ({ channelId }) => {
       );
     } catch (err: any) {
       console.error('Error updating task status:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update task status';
+      // Show error to user if needed
+      alert(errorMessage);
     }
   };
 

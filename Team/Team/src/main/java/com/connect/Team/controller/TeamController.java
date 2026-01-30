@@ -27,7 +27,7 @@ public class TeamController {
     private final TeamService teamService;
     private final JwtUtil jwtUtil;
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -49,8 +49,8 @@ public class TeamController {
     @Operation(summary = "Get all teams", description = "Retrieves all teams in the admin's organization with their members.")
     public ResponseEntity<List<TeamResponse>> getTeams(HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
-            if (organizationId == null) {
+            String organizationId = getOrganizationId(httpRequest);
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             List<TeamResponse> teams = teamService.getTeamsByOrganization(organizationId);
@@ -68,11 +68,11 @@ public class TeamController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get team", description = "Retrieves team details with all members.")
     public ResponseEntity<TeamResponse> getTeam(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
-            if (organizationId == null) {
+            String organizationId = getOrganizationId(httpRequest);
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             TeamResponse team = teamService.getTeamById(id, organizationId);

@@ -8,7 +8,6 @@ import com.connect.Team.repository.TeamMemberRepository;
 import com.connect.Team.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,8 +25,7 @@ public class TeamService {
     /**
      * Get all teams in an organization (admin read-only)
      */
-    @Transactional(readOnly = true)
-    public List<TeamResponse> getTeamsByOrganization(Long organizationId) {
+    public List<TeamResponse> getTeamsByOrganization(String organizationId) {
         List<Team> teams = teamRepository.findByOrganizationId(organizationId);
         
         return teams.stream()
@@ -60,8 +58,7 @@ public class TeamService {
     /**
      * Get team by ID with members (admin read-only)
      */
-    @Transactional(readOnly = true)
-    public TeamResponse getTeamById(Long teamId, Long organizationId) {
+    public TeamResponse getTeamById(String teamId, String organizationId) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
         

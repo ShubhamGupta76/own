@@ -17,14 +17,14 @@ import java.util.List;
 @AllArgsConstructor
 public class TaskResponse {
     
-    private Long id;
+    private String id;
     private String title;
     private String description;
-    private Long organizationId;
-    private Long teamId;
-    private Long channelId;
-    private Long createdBy;
-    private Long assignedTo;
+    private String organizationId;
+    private String teamId;
+    private String channelId;
+    private String createdBy;
+    private String assignedTo;
     private String taskType;
     private String status;
     private String priority;

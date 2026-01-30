@@ -1,10 +1,14 @@
 package com.connect.File.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
@@ -13,12 +17,7 @@ import java.time.LocalDateTime;
  * Stores file information and metadata (OneDrive/SharePoint-like abstraction)
  * Actual file content stored on filesystem
  */
-@Entity
-@Table(name = "file_metadata", indexes = {
-    @Index(name = "idx_channel", columnList = "channel_id"),
-    @Index(name = "idx_organization", columnList = "organization_id"),
-    @Index(name = "idx_uploaded_by", columnList = "uploaded_by")
-})
+@Document(collection = "file_metadata")
 @Data
 @Builder
 @NoArgsConstructor
@@ -26,57 +25,38 @@ import java.time.LocalDateTime;
 public class FileMetadata {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(nullable = false)
     private String filename;
     
-    @Column(nullable = false)
     private Long size; // File size in bytes
     
-    @Column(name = "content_type", nullable = false)
     private String contentType; // MIME type
     
-    @Column(name = "file_path", nullable = false)
     private String filePath; // Path on filesystem
     
-    @Column(name = "channel_id")
-    private Long channelId; // Nullable: if file is in channel
+    @Indexed
+    private String channelId; // Nullable: if file is in channel
     
-    @Column(name = "chat_message_id")
-    private Long chatMessageId; // Nullable: if file is attached to chat message
+    private String chatMessageId; // Nullable: if file is attached to chat message
     
-    @Column(name = "uploaded_by", nullable = false)
-    private Long uploadedBy; // User ID who uploaded
+    @Indexed
+    private String uploadedBy; // User ID who uploaded
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
-    @Column(nullable = false)
+    @Builder.Default
     private Integer version = 1; // File version number
     
-    @Column(name = "locked_by")
-    private Long lockedBy; // User ID who locked the file (nullable)
+    private String lockedBy; // User ID who locked the file (nullable)
     
-    @Column(name = "locked_at")
     private LocalDateTime lockedAt; // When file was locked
     
-    @Column(name = "uploaded_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime uploadedAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        uploadedAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
 

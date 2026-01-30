@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MeetingNoteResponse {
     
-    private Long id;
-    private Long meetingId;
-    private Long createdBy;
+    private String id;
+    private String meetingId;
+    private String createdBy;
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

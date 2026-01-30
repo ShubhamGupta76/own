@@ -4,16 +4,13 @@ import com.connect.Chat.entity.ChatPolicy;
 import com.connect.Chat.repository.ChatPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 @Service
 @RequiredArgsConstructor
 public class ChatPolicyService {
     
     private final ChatPolicyRepository chatPolicyRepository;
     
-    @Transactional(readOnly = true)
-    public ChatPolicy getChatPolicy(Long organizationId) {
+    public ChatPolicy getChatPolicy(String organizationId) {
         return chatPolicyRepository.findByOrganizationId(organizationId)
                 .orElseGet(() -> ChatPolicy.builder()
                         .organizationId(organizationId)
@@ -21,8 +18,7 @@ public class ChatPolicyService {
                         .build());
     }
     
-    @Transactional
-    public ChatPolicy updateChatPolicy(Long organizationId, Boolean enabled) {
+    public ChatPolicy updateChatPolicy(String organizationId, Boolean enabled) {
         ChatPolicy policy = chatPolicyRepository.findByOrganizationId(organizationId)
                 .orElseGet(() -> ChatPolicy.builder()
                         .organizationId(organizationId)

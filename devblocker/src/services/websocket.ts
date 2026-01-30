@@ -11,17 +11,17 @@ import type { ChatEvent, NotificationEvent, Message, WebRTCSignalingMessage } fr
  * WebSocket connection manager
  */
 class WebSocketManager {
-  private chatConnections: Map<number, Client> = new Map(); // channelId/userId -> STOMP Client
+  private chatConnections: Map<string, Client> = new Map(); // channelId/userId -> STOMP Client
   private notificationConnection: Client | null = null;
-  private meetingConnections: Map<number, WebSocket> = new Map(); // meetingId -> WebSocket
-  private chatCallbacks: Map<number, ((event: ChatEvent) => void)[]> = new Map();
+  private meetingConnections: Map<string, WebSocket> = new Map(); // meetingId -> WebSocket
+  private chatCallbacks: Map<string, ((event: ChatEvent) => void)[]> = new Map();
   private notificationCallbacks: ((event: NotificationEvent) => void)[] = [];
-  private meetingCallbacks: Map<number, ((message: WebRTCSignalingMessage) => void)[]> = new Map();
+  private meetingCallbacks: Map<string, ((message: WebRTCSignalingMessage) => void)[]> = new Map();
 
   /**
    * Connect to chat WebSocket (channel or direct) using STOMP
    */
-  connectToChat(roomId: number, roomType: 'channel' | 'direct', onMessage: (event: ChatEvent) => void): void {
+  connectToChat(roomId: string, roomType: 'channel' | 'direct', onMessage: (event: ChatEvent) => void): void {
     // Close existing connection if any
     this.disconnectFromChat(roomId, roomType);
 
@@ -128,7 +128,7 @@ class WebSocketManager {
   /**
    * Disconnect from chat WebSocket
    */
-  disconnectFromChat(roomId: number, roomType: 'channel' | 'direct'): void {
+  disconnectFromChat(roomId: string, roomType: 'channel' | 'direct'): void {
     const client = this.chatConnections.get(roomId);
     if (client) {
       if (client.connected) {
@@ -240,8 +240,8 @@ class WebSocketManager {
    * Connect to meeting WebSocket for signaling
    */
   connectToMeeting(
-    meetingId: number,
-    userId: number,
+    meetingId: string,
+    userId: string,
     onSignalingMessage: (message: WebRTCSignalingMessage) => void
   ): void {
     // Close existing connection if any
@@ -342,7 +342,7 @@ class WebSocketManager {
    * Send signaling message via meeting WebSocket
    * WebSocket payload format: { type, meetingId, senderId, targetUserId, data }
    */
-  sendMeetingSignaling(meetingId: number, message: WebRTCSignalingMessage): void {
+  sendMeetingSignaling(meetingId: string, message: WebRTCSignalingMessage): void {
     const ws = this.meetingConnections.get(meetingId);
     if (ws && ws.readyState === WebSocket.OPEN) {
       const topic = API_CONFIG.WS_TOPICS.MEETING_SIGNALING(meetingId);
@@ -386,7 +386,7 @@ class WebSocketManager {
   /**
    * Disconnect from meeting WebSocket
    */
-  disconnectFromMeeting(meetingId: number): void {
+  disconnectFromMeeting(meetingId: string): void {
     const ws = this.meetingConnections.get(meetingId);
     if (ws) {
       ws.close();

@@ -8,7 +8,7 @@
 
 import React from 'react';
 import type { ReactNode } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { PrimarySidebar } from './PrimarySidebar';
 import { TeamsChannelsSidebar } from './TeamsChannelsSidebar';
 import { TopBar } from './TopBar';
@@ -18,13 +18,16 @@ interface MainLayoutProps {
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/app/admin');
+
   return (
     <div className="flex h-screen bg-white overflow-hidden">
       {/* Primary Sidebar - Icon Navigation */}
       <PrimarySidebar />
 
-      {/* Teams & Channels Sidebar */}
-      <TeamsChannelsSidebar />
+      {/* Teams & Channels Sidebar - Hide on admin routes */}
+      {!isAdminRoute && <TeamsChannelsSidebar />}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">

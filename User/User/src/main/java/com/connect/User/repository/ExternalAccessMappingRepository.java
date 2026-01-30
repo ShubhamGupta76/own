@@ -1,7 +1,7 @@
 package com.connect.User.repository;
 
 import com.connect.User.entity.ExternalAccessMapping;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,18 +11,18 @@ import java.util.Optional;
  * Repository for ExternalAccessMapping entity
  */
 @Repository
-public interface ExternalAccessMappingRepository extends JpaRepository<ExternalAccessMapping, Long> {
+public interface ExternalAccessMappingRepository extends MongoRepository<ExternalAccessMapping, String> {
     
-    List<ExternalAccessMapping> findByUserIdAndOrganizationId(Long userId, Long organizationId);
+    List<ExternalAccessMapping> findByUserIdAndOrganizationId(String userId, String organizationId);
     
-    List<ExternalAccessMapping> findByTeamIdAndOrganizationId(Long teamId, Long organizationId);
+    List<ExternalAccessMapping> findByTeamIdAndOrganizationId(String teamId, String organizationId);
     
-    List<ExternalAccessMapping> findByChannelIdAndOrganizationId(Long channelId, Long organizationId);
+    List<ExternalAccessMapping> findByChannelIdAndOrganizationId(String channelId, String organizationId);
     
-    Optional<ExternalAccessMapping> findByUserIdAndTeamIdAndChannelId(Long userId, Long teamId, Long channelId);
+    Optional<ExternalAccessMapping> findByUserIdAndTeamIdAndChannelId(String userId, String teamId, String channelId);
     
-    boolean existsByUserIdAndTeamId(Long userId, Long teamId);
+    boolean existsByUserIdAndTeamId(String userId, String teamId);
     
-    boolean existsByUserIdAndChannelId(Long userId, Long channelId);
+    boolean existsByUserIdAndChannelId(String userId, String channelId);
 }
 

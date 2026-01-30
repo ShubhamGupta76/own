@@ -1,17 +1,20 @@
 package com.connect.Notification.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "notification_configs", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"organization_id", "notification_type"})
-})
+@Document(collection = "notification_configs")
+@CompoundIndex(name = "org_type_idx", def = "{'organizationId': 1, 'notificationType': 1}", unique = true)
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,35 +22,20 @@ import java.time.LocalDateTime;
 public class NotificationConfig {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
-    @Column(name = "notification_type", nullable = false)
-    @Enumerated(EnumType.STRING)
     private Notification.NotificationType notificationType;
     
-    @Column(nullable = false)
     @Builder.Default
     private Boolean enabled = true;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
 

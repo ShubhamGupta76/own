@@ -34,12 +34,12 @@ public class MeetingController {
     /**
      * Extract user information from JWT token
      */
-    private Long getUserId(HttpServletRequest request) {
+    private String getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -63,10 +63,10 @@ public class MeetingController {
             @Valid @RequestBody InstantCallRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -88,10 +88,10 @@ public class MeetingController {
             @Valid @RequestBody ScheduleMeetingRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -110,13 +110,13 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Join meeting", description = "Joins a meeting. If meeting is scheduled and time has come, it becomes live.")
     public ResponseEntity<MeetingParticipantResponse> joinMeeting(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -135,13 +135,13 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Leave meeting", description = "Leaves a meeting. If no active participants remain, meeting ends.")
     public ResponseEntity<Void> leaveMeeting(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -160,13 +160,13 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Start screen sharing", description = "Starts screen sharing in a live meeting.")
     public ResponseEntity<ScreenShareStateResponse> startScreenShare(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -185,13 +185,13 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Stop screen sharing", description = "Stops screen sharing in a meeting.")
     public ResponseEntity<Void> stopScreenShare(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -210,13 +210,13 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Start recording", description = "Starts recording a live meeting.")
     public ResponseEntity<RecordingStateResponse> startRecording(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -235,14 +235,14 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Stop recording", description = "Stops recording and saves recording URL.")
     public ResponseEntity<RecordingStateResponse> stopRecording(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody(required = false) Map<String, String> request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -262,14 +262,14 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Add meeting note", description = "Adds a text note to a meeting.")
     public ResponseEntity<MeetingNoteResponse> addNote(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody MeetingNoteRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -288,12 +288,12 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Get meeting notes", description = "Retrieves all notes for a meeting.")
     public ResponseEntity<List<MeetingNoteResponse>> getNotes(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -312,12 +312,12 @@ public class MeetingController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Get meeting", description = "Retrieves meeting details with participants, screen share, and recording status.")
     public ResponseEntity<MeetingResponse> getMeeting(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -337,9 +337,9 @@ public class MeetingController {
     @Operation(summary = "Get all meetings", description = "Retrieves all meetings in the organization.")
     public ResponseEntity<List<MeetingResponse>> getAllMeetings(HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             

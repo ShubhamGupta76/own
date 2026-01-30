@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -28,18 +27,15 @@ public class UserService {
     /**
      * Get organization ID by admin ID (fallback when organizationId is not in token)
      */
-    @Transactional(readOnly = true)
-    public Long getOrganizationIdByAdminId(Long adminId) {
-        return organizationRepository.findByAdminId(adminId)
-                .map(Organization::getId)
-                .orElse(null);
+    public String getOrganizationIdByAdminId(String adminId) {
+        Organization org = organizationRepository.findByAdminId(adminId).orElse(null);
+        return org != null ? org.getId() : null;
     }
     
     /**
      * Create a new user in an organization
      */
-    @Transactional
-    public User createUser(UserRequest request, Long organizationId, Long adminId) {
+    public User createUser(UserRequest request, String organizationId, String adminId) {
         // Verify organization exists and admin owns it
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
@@ -85,8 +81,7 @@ public class UserService {
     /**
      * Get all users in an organization (admin can only access their own organization)
      */
-    @Transactional(readOnly = true)
-    public List<User> getUsersByOrganization(Long organizationId, Long adminId) {
+    public List<User> getUsersByOrganization(String organizationId, String adminId) {
         // Verify organization exists and admin owns it
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
@@ -102,8 +97,7 @@ public class UserService {
      * Get all users in an organization (for members - no admin validation)
      * Used for adding members to channels/teams
      */
-    @Transactional(readOnly = true)
-    public List<User> getUsersByOrganizationForMembers(Long organizationId) {
+    public List<User> getUsersByOrganizationForMembers(String organizationId) {
         // Verify organization exists
         if (!organizationRepository.existsById(organizationId)) {
             throw new RuntimeException("Organization not found");
@@ -117,14 +111,13 @@ public class UserService {
      * If userId matches adminId, find user by organization's admin relationship
      * Uses email to find the correct admin user when multiple admins exist
      */
-    @Transactional(readOnly = true)
-    public User getUserById(Long userId, Long adminId, String email, Long organizationId) {
+    public User getUserById(String userId, String adminId, String email, String organizationId) {
         // If admin is accessing their own profile (userId == adminId)
         // Try to find user by adminId first, then by email and organization
         if (userId.equals(adminId)) {
             // If we have email and organizationId, prioritize finding by email
             // This ensures we get the correct admin user when multiple admins exist
-            if (email != null && !email.isEmpty() && organizationId != null && organizationId > 0) {
+            if (email != null && !email.isEmpty() && organizationId != null && !organizationId.isEmpty()) {
                 User userByEmail = userRepository.findByEmailAndOrganizationId(email, organizationId)
                         .orElse(null);
                 if (userByEmail != null) {
@@ -177,7 +170,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         // If user has no organizationId, deny access
-        if (user.getOrganizationId() == null) {
+        if (user.getOrganizationId() == null || user.getOrganizationId().isEmpty()) {
             throw new RuntimeException("User does not belong to any organization");
         }
         
@@ -195,8 +188,7 @@ public class UserService {
     /**
      * Get user by ID (backward compatibility - uses email from token if available)
      */
-    @Transactional(readOnly = true)
-    public User getUserById(Long userId, Long adminId) {
+    public User getUserById(String userId, String adminId) {
         return getUserById(userId, adminId, null, null);
     }
     
@@ -204,17 +196,17 @@ public class UserService {
      * Update user password
      * Admin can reset passwords for any user in their organization
      */
-    @Transactional
-    public User updateUserPassword(Long userId, String newPassword, Long adminId) {
-        // Get user and verify admin has access (without readOnly to allow modification)
+    public User updateUserPassword(String userId, String newPassword, String adminId) {
+        // Get user and verify admin has access
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         // Verify admin has access to this user's organization
-        if (user.getOrganizationId() == null) {
+        if (user.getOrganizationId() == null || user.getOrganizationId().isEmpty()) {
             throw new RuntimeException("User does not belong to any organization");
         }
         
+        // Find organization
         Organization organization = organizationRepository.findById(user.getOrganizationId())
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
         
@@ -230,7 +222,7 @@ public class UserService {
         log.debug("Password encoded. Encoded length: {}", encodedPassword.length());
         user.setPassword(encodedPassword);
         
-        // Save the user - @Transactional ensures it's committed
+        // Save the user
         User savedUser = userRepository.save(user);
         
         log.info("Password updated successfully. User ID: {}, Email: {}, Has password: {}, Password hash prefix: {}", 
@@ -254,8 +246,7 @@ public class UserService {
     /**
      * Update user role
      */
-    @Transactional
-    public User updateUserRole(Long userId, String role, Long adminId) {
+    public User updateUserRole(String userId, String role, String adminId) {
         User user = getUserById(userId, adminId);
         
         // Validate role
@@ -273,8 +264,7 @@ public class UserService {
     /**
      * Enable/disable user
      */
-    @Transactional
-    public User updateUserStatus(Long userId, Boolean active, Long adminId) {
+    public User updateUserStatus(String userId, Boolean active, String adminId) {
         User user = getUserById(userId, adminId);
         user.setActive(active);
         return userRepository.save(user);

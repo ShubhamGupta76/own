@@ -1,20 +1,20 @@
 package com.connect.Notification.repository;
 
 import com.connect.Notification.entity.Notification;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    List<Notification> findByOrganizationId(Long organizationId);
-    List<Notification> findByOrganizationIdAndEnabledTrue(Long organizationId);
+public interface NotificationRepository extends MongoRepository<Notification, String> {
+    List<Notification> findByOrganizationId(String organizationId);
+    List<Notification> findByOrganizationIdAndEnabledTrue(String organizationId);
     
-    List<Notification> findByUserIdAndOrganizationIdOrderByCreatedAtDesc(Long userId, Long organizationId);
+    List<Notification> findByUserIdAndOrganizationIdOrderByCreatedAtDesc(String userId, String organizationId);
     
-    List<Notification> findByUserIdAndReadFalseAndOrganizationIdOrderByCreatedAtDesc(Long userId, Long organizationId);
+    List<Notification> findByUserIdAndReadFalseAndOrganizationIdOrderByCreatedAtDesc(String userId, String organizationId);
     
-    Long countByUserIdAndReadFalseAndOrganizationId(Long userId, Long organizationId);
+    long countByUserIdAndReadFalseAndOrganizationId(String userId, String organizationId);
 }
 

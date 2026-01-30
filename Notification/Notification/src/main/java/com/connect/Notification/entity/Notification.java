@@ -1,15 +1,17 @@
 package com.connect.Notification.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "notifications")
+@Document(collection = "notifications")
 @Data
 @Builder
 @NoArgsConstructor
@@ -17,43 +19,31 @@ import java.time.LocalDateTime;
 public class Notification {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
-    @Column(name = "user_id")
-    private Long userId; // null for system-wide notifications
+    @Indexed
+    private String userId; // null for system-wide notifications
     
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private NotificationType type;
     
-    @Column(nullable = false)
     private String title;
     
-    @Column(columnDefinition = "TEXT")
     private String message;
     
-    @Column(name = "source_id")
-    private Long sourceId; // ID of the source entity (messageId, taskId, fileId, meetingId)
+    private String sourceId; // ID of the source entity (messageId, taskId, fileId, meetingId)
     
-    @Column(nullable = false)
+    @Indexed
     @Builder.Default
     private Boolean read = false;
     
-    @Column(nullable = false)
     @Builder.Default
     private Boolean enabled = true;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
     
     public enum NotificationType {
         SYSTEM,

@@ -24,7 +24,7 @@ public class FilePolicyController {
     private final FilePolicyService filePolicyService;
     private final JwtUtil jwtUtil;
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -41,8 +41,8 @@ public class FilePolicyController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get file policy", description = "Retrieves file sharing policy configuration for the organization.")
     public ResponseEntity<FilePolicy> getFilePolicy(HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         return ResponseEntity.ok(filePolicyService.getFilePolicy(organizationId));
@@ -54,8 +54,8 @@ public class FilePolicyController {
     public ResponseEntity<FilePolicy> updateFilePolicy(
             @RequestBody Map<String, Object> request,
             HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         

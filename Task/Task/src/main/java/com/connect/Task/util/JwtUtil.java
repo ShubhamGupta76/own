@@ -34,12 +34,11 @@ public class JwtUtil {
         return claimsResolver.apply(claims);
     }
     
-    public Long extractOrganizationId(String token) {
+    public String extractOrganizationId(String token) {
         return extractClaim(token, claims -> {
             Object orgId = claims.get("organizationId");
             if (orgId == null) return null;
-            if (orgId instanceof Integer) return ((Integer) orgId).longValue();
-            return (Long) orgId;
+            return orgId.toString();
         });
     }
     
@@ -51,12 +50,11 @@ public class JwtUtil {
         });
     }
     
-    public Long extractUserId(String token) {
+    public String extractUserId(String token) {
         return extractClaim(token, claims -> {
             Object userId = claims.get("userId");
             if (userId == null) return null;
-            if (userId instanceof Integer) return ((Integer) userId).longValue();
-            return (Long) userId;
+            return userId.toString();
         });
     }
     

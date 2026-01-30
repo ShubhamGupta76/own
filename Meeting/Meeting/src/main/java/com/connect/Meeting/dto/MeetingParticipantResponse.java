@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MeetingParticipantResponse {
     
-    private Long id;
-    private Long meetingId;
-    private Long userId;
+    private String id;
+    private String meetingId;
+    private String userId;
     private LocalDateTime joinedAt;
     private LocalDateTime leftAt;
     private Boolean isActive;

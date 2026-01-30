@@ -15,7 +15,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,8 +39,7 @@ public class ChatService {
      * Send a message
      * Validates chat policy, saves message, and broadcasts via WebSocket
      */
-    @Transactional
-    public MessageResponse sendMessage(SendMessageRequest request, Long senderId, String senderRole, Long organizationId) {
+    public MessageResponse sendMessage(SendMessageRequest request, String senderId, String senderRole, String organizationId) {
         // Check if chat is enabled for the organization
         ChatPolicy policy = chatPolicyRepository.findByOrganizationId(organizationId)
                 .orElse(ChatPolicy.builder()
@@ -79,7 +77,7 @@ public class ChatService {
             } else {
                 // Might be a direct chat - check if chatRoomId is a userId
                 // For direct chats, frontend sends the other user's ID as chatRoomId
-                Long otherUserId = request.getChatRoomId();
+                String otherUserId = request.getChatRoomId();
                 
                 // Validate that otherUserId is different from senderId (can't chat with yourself)
                 if (otherUserId.equals(senderId)) {
@@ -87,8 +85,8 @@ public class ChatService {
                 }
                 
                 // Use consistent ordering to find/create the direct chat room
-                Long user1Id = senderId < otherUserId ? senderId : otherUserId;
-                Long user2Id = senderId < otherUserId ? otherUserId : senderId;
+                String user1Id = senderId.compareTo(otherUserId) < 0 ? senderId : otherUserId;
+                String user2Id = senderId.compareTo(otherUserId) < 0 ? otherUserId : senderId;
                 
                 Optional<ChatRoom> directRoom = chatRoomRepository.findDirectChatRoom(
                         user1Id, user2Id, organizationId);
@@ -151,7 +149,7 @@ public class ChatService {
         message = messageRepository.save(message);
         
         // Extract mentioned user IDs from message content
-        List<Long> mentionedUserIds = extractMentions(request.getContent());
+        List<String> mentionedUserIds = extractMentions(request.getContent());
         
         // Publish Kafka event for async notification processing
         eventProducer.publishMessageSentEvent(
@@ -189,8 +187,7 @@ public class ChatService {
      * Get messages for a channel
      * Creates chat room if it doesn't exist
      */
-    @Transactional
-    public List<MessageResponse> getChannelMessages(Long channelId, Long organizationId, int page, int size) {
+    public List<MessageResponse> getChannelMessages(String channelId, String organizationId, int page, int size) {
         // Get or create chat room for channel
         ChatRoom chatRoom = getOrCreateChannelRoom(channelId, organizationId);
         
@@ -204,18 +201,17 @@ public class ChatService {
     
     /**
      * Get messages for direct chat with a user
-     * Creates chat room if it doesn't exist (requires write transaction)
+     * Creates chat room if it doesn't exist
      */
-    @Transactional
-    public List<MessageResponse> getUserMessages(Long userId, Long currentUserId, Long organizationId, int page, int size) {
+    public List<MessageResponse> getUserMessages(String userId, String currentUserId, String organizationId, int page, int size) {
         // Validate inputs
-        if (userId == null || userId <= 0) {
+        if (userId == null || userId.isEmpty()) {
             throw new RuntimeException("Invalid user ID: " + userId);
         }
-        if (currentUserId == null || currentUserId <= 0) {
+        if (currentUserId == null || currentUserId.isEmpty()) {
             throw new RuntimeException("Invalid current user ID");
         }
-        if (organizationId == null || organizationId <= 0) {
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Invalid organization ID");
         }
         
@@ -226,8 +222,8 @@ public class ChatService {
         
         // Find or create direct chat room
         // Use consistent ordering (smaller ID first) to avoid duplicate chat rooms
-        Long user1Id = currentUserId < userId ? currentUserId : userId;
-        Long user2Id = currentUserId < userId ? userId : currentUserId;
+        String user1Id = currentUserId.compareTo(userId) < 0 ? currentUserId : userId;
+        String user2Id = currentUserId.compareTo(userId) < 0 ? userId : currentUserId;
         
         ChatRoom chatRoom = chatRoomRepository.findDirectChatRoom(user1Id, user2Id, organizationId)
                 .orElseGet(() -> {
@@ -253,8 +249,7 @@ public class ChatService {
     /**
      * Get or create chat room for a channel
      */
-    @Transactional
-    public ChatRoom getOrCreateChannelRoom(Long channelId, Long organizationId) {
+    public ChatRoom getOrCreateChannelRoom(String channelId, String organizationId) {
         return chatRoomRepository
                 .findByRoomTypeAndRoomIdAndOrganizationId(ChatRoom.RoomType.CHANNEL, channelId, organizationId)
                 .orElseGet(() -> {
@@ -270,8 +265,7 @@ public class ChatService {
     /**
      * Get or create chat room for a team
      */
-    @Transactional
-    public ChatRoom getOrCreateTeamRoom(Long teamId, Long organizationId) {
+    public ChatRoom getOrCreateTeamRoom(String teamId, String organizationId) {
         return chatRoomRepository
                 .findByRoomTypeAndRoomIdAndOrganizationId(ChatRoom.RoomType.TEAM, teamId, organizationId)
                 .orElseGet(() -> {
@@ -346,27 +340,24 @@ public class ChatService {
     /**
      * Extract mentioned user IDs from message content
      * Looks for @userId patterns in the message
-     * Format: @123, @456, etc.
+     * Format: @userId, @userId2, etc.
      */
-    private List<Long> extractMentions(String content) {
+    private List<String> extractMentions(String content) {
         if (content == null || content.trim().isEmpty()) {
             return List.of();
         }
         
         // Simple regex to find @userId patterns
         // In production, this should be more sophisticated and validate user IDs
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("@(\\d+)");
+        // Pattern matches @ followed by alphanumeric characters (MongoDB IDs are strings)
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("@([a-zA-Z0-9]+)");
         java.util.regex.Matcher matcher = pattern.matcher(content);
         
-        List<Long> mentionedIds = new java.util.ArrayList<>();
+        List<String> mentionedIds = new java.util.ArrayList<>();
         while (matcher.find()) {
-            try {
-                Long userId = Long.parseLong(matcher.group(1));
-                if (!mentionedIds.contains(userId)) {
-                    mentionedIds.add(userId);
-                }
-            } catch (NumberFormatException e) {
-                // Skip invalid user IDs
+            String userId = matcher.group(1);
+            if (!mentionedIds.contains(userId)) {
+                mentionedIds.add(userId);
             }
         }
         

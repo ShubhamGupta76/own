@@ -1,17 +1,18 @@
 package com.connect.Channel.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 /**
  * Channel Permission entity
  * Defines permissions for channels
  */
-@Entity
-@Table(name = "channel_permissions")
+@Document(collection = "channel_permissions")
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,24 +20,19 @@ import lombok.NoArgsConstructor;
 public class ChannelPermission {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "channel_id", nullable = false)
-    private Long channelId;
+    @Indexed
+    private String channelId;
     
-    @Column(name = "user_id")
-    private Long userId; // null for team-level permissions
+    private String userId; // null for team-level permissions
     
-    @Column(name = "team_id")
-    private Long teamId; // null for user-level permissions
+    private String teamId; // null for user-level permissions
     
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private PermissionType permissionType;
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
     public enum PermissionType {
         READ,

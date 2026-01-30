@@ -19,13 +19,13 @@ import java.util.List;
 public class MeetingEvent {
     
     private String eventType; // MEETING_CREATED, USER_JOINED, USER_LEFT, RECORDING_STARTED, RECORDING_STOPPED
-    private Long meetingId;
+    private String meetingId;
     private String meetingTitle;
-    private Long userId; // For USER_JOINED, USER_LEFT, RECORDING_STARTED, RECORDING_STOPPED
-    private Long organizationId;
-    private Long teamId;
-    private Long channelId;
-    private List<Long> participantIds; // For MEETING_CREATED
+    private String userId; // For USER_JOINED, USER_LEFT, RECORDING_STARTED, RECORDING_STOPPED
+    private String organizationId;
+    private String teamId;
+    private String channelId;
+    private List<String> participantIds; // For MEETING_CREATED
     private String recordingUrl; // For RECORDING_STOPPED
     private LocalDateTime timestamp;
 }

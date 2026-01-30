@@ -1,10 +1,14 @@
 package com.connect.User.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
@@ -12,8 +16,7 @@ import java.time.LocalDateTime;
  * Organization entity (tenant/company)
  * Each organization is isolated with its own users and policies
  */
-@Entity
-@Table(name = "organizations")
+@Document(collection = "organizations")
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,36 +24,23 @@ import java.time.LocalDateTime;
 public class Organization {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(nullable = false, unique = true)
+    @Indexed(unique = true)
     private String name;
     
-    @Column(unique = true)
+    @Indexed(unique = true, sparse = true)
     private String domain; // Company domain for email validation
     
-    @Column(name = "admin_id")
-    private Long adminId; // Reference to admin who created this organization
+    @Indexed
+    private String adminId; // Reference to admin who created this organization (String from Auth service)
     
-    @Column(nullable = false)
     private Boolean active = true;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
 

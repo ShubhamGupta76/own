@@ -37,12 +37,12 @@ public class UserController {
     /**
      * Extract admin ID and organization ID from JWT token
      */
-    private Long getAdminId(HttpServletRequest request) {
+    private String getAdminId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -69,16 +69,17 @@ public class UserController {
             @Valid @RequestBody UserRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String adminId = getAdminId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
             // If organizationId is not in token, try to get it from organization by adminId
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 log.warn("OrganizationId not found in token for admin {}, attempting to get from organization", adminId);
-                organizationId = userService.getOrganizationIdByAdminId(adminId);
-                if (organizationId == null) {
+                String orgIdString = userService.getOrganizationIdByAdminId(adminId);
+                if (orgIdString == null) {
                     throw new RuntimeException("Organization not found. Please create an organization first.");
                 }
+                organizationId = orgIdString;
             }
             
             log.info("Creating user with email {} in organization {} by admin {}", 
@@ -100,16 +101,17 @@ public class UserController {
     @Operation(summary = "Get all users", description = "Retrieves all users in the admin's organization.")
     public ResponseEntity<List<User>> getUsers(HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String adminId = getAdminId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
             // If organizationId is not in token, try to get it from organization by adminId
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 log.warn("OrganizationId not found in token for admin {}, attempting to get from organization", adminId);
-                organizationId = userService.getOrganizationIdByAdminId(adminId);
-                if (organizationId == null) {
+                String orgIdString = userService.getOrganizationIdByAdminId(adminId);
+                if (orgIdString == null) {
                     throw new RuntimeException("Organization not found. Please create an organization first.");
                 }
+                organizationId = orgIdString;
             }
             
             List<User> users = userService.getUsersByOrganization(organizationId, adminId);
@@ -128,13 +130,13 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get user", description = "Retrieves user details by ID.")
     public ResponseEntity<User> getUser(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
             String token = extractToken(httpRequest);
-            Long adminId = getAdminId(httpRequest);
+            String adminId = getAdminId(httpRequest);
             String email = jwtUtil.extractEmail(token);
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
             log.debug("Getting user {} by admin {} (email: {}, orgId: {})", id, adminId, email, organizationId);
             User user = userService.getUserById(id, adminId, email, organizationId);
@@ -153,11 +155,11 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user role", description = "Updates the role of a user (ADMIN, MANAGER, EMPLOYEE).")
     public ResponseEntity<User> updateUserRole(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody Map<String, String> request,
             HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
+            String adminId = getAdminId(httpRequest);
             String role = request.get("role");
             if (role == null) {
                 throw new RuntimeException("Role is required");
@@ -177,11 +179,11 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user status", description = "Enables or disables a user account.")
     public ResponseEntity<User> updateUserStatus(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody Map<String, Boolean> request,
             HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
+            String adminId = getAdminId(httpRequest);
             Boolean active = request.get("active");
             if (active == null) {
                 throw new RuntimeException("Active status is required");
@@ -201,12 +203,12 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Reset user password", description = "Resets the password for a user. Required for EMPLOYEE users who don't have a password set.")
     public ResponseEntity<User> resetUserPassword(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody Map<String, String> request,
             HttpServletRequest httpRequest) {
         try {
             log.info("Reset password request received for user ID: {}", id);
-            Long adminId = getAdminId(httpRequest);
+            String adminId = getAdminId(httpRequest);
             log.debug("Admin ID: {}, Request body keys: {}", adminId, request.keySet());
             
             String newPassword = request.get("password");
@@ -239,9 +241,9 @@ public class UserController {
     @Operation(summary = "Get organization members", description = "Retrieves all users in the current user's organization. Used for adding members to channels and teams.")
     public ResponseEntity<List<User>> getOrganizationMembers(HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             

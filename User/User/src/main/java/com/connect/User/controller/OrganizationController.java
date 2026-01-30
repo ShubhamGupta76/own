@@ -26,7 +26,7 @@ public class OrganizationController {
     private final OrganizationService organizationService;
     private final JwtUtil jwtUtil;
     
-    private Long getAdminId(HttpServletRequest request) {
+    private String getAdminId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
@@ -45,7 +45,7 @@ public class OrganizationController {
     public ResponseEntity<OrganizationResponse> createOrganization(
             @Valid @RequestBody OrganizationRequest request,
             HttpServletRequest httpRequest) {
-        Long adminId = getAdminId(httpRequest);
+        String adminId = getAdminId(httpRequest);
         
         // Check if admin already has an organization
         try {
@@ -69,10 +69,10 @@ public class OrganizationController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get organization", description = "Retrieves organization details. Admin can only access their own organization.")
     public ResponseEntity<Organization> getOrganization(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
+            String adminId = getAdminId(httpRequest);
             Organization organization = organizationService.getOrganization(id, adminId);
             return ResponseEntity.ok(organization);
         } catch (RuntimeException e) {
@@ -85,7 +85,7 @@ public class OrganizationController {
     @Operation(summary = "Get my organization", description = "Retrieves the organization associated with the authenticated admin. Returns 404 if no organization exists yet.")
     public ResponseEntity<Organization> getMyOrganization(HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
+            String adminId = getAdminId(httpRequest);
             Organization organization = organizationService.getOrganizationByAdminId(adminId);
             return ResponseEntity.ok(organization);
         } catch (RuntimeException e) {
@@ -96,7 +96,7 @@ public class OrganizationController {
 
     @GetMapping("/admin/{adminId}")
     @Operation(summary = "Get organization by admin ID (internal)", description = "Internal endpoint for migration. Returns organization for the given admin ID.")
-    public ResponseEntity<Organization> getOrganizationByAdminIdInternal(@PathVariable Long adminId) {
+    public ResponseEntity<Organization> getOrganizationByAdminIdInternal(@PathVariable String adminId) {
         try {
             Organization organization = organizationService.getOrganizationByAdminId(adminId);
             return ResponseEntity.ok(organization);

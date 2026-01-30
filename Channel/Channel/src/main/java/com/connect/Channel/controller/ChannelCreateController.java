@@ -1,9 +1,7 @@
 package com.connect.Channel.controller;
 
-import com.connect.Channel.dto.ChannelResponse;
 import com.connect.Channel.entity.Channel;
 import com.connect.Channel.repository.ChannelRepository;
-import com.connect.Channel.service.ChannelManagementService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,15 +22,15 @@ public class ChannelCreateController {
         try {
             String name = (String) request.get("name");
             String description = (String) request.get("description");
-            Long teamId = ((Number) request.get("teamId")).longValue();
+            String teamId = request.get("teamId") != null ? request.get("teamId").toString() : null;
             String type = (String) request.getOrDefault("type", "STANDARD");
             Boolean chatEnabled = request.get("chatEnabled") != null ? (Boolean) request.get("chatEnabled") : true;
             Boolean fileEnabled = request.get("fileEnabled") != null ? (Boolean) request.get("fileEnabled") : true;
             Boolean meetingEnabled = request.get("meetingEnabled") != null ? (Boolean) request.get("meetingEnabled")
                     : true;
 
-            Long organizationId = request.get("organizationId") != null
-                    ? ((Number) request.get("organizationId")).longValue()
+            String organizationId = request.get("organizationId") != null
+                    ? request.get("organizationId").toString()
                     : null;
 
             if (organizationId == null) {

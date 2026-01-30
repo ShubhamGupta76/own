@@ -1,10 +1,14 @@
 package com.connect.User.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 
 import java.time.LocalDateTime;
 
@@ -13,10 +17,8 @@ import java.time.LocalDateTime;
  * Maps external users to specific teams/channels they can access
  * Restricts external users to only their assigned teams/channels
  */
-@Entity
-@Table(name = "external_access_mappings", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"user_id", "team_id", "channel_id"})
-})
+@Document(collection = "external_access_mappings")
+@CompoundIndex(name = "user_team_channel_idx", def = "{'userId': 1, 'teamId': 1, 'channelId': 1}", unique = true)
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,33 +26,23 @@ import java.time.LocalDateTime;
 public class ExternalAccessMapping {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "user_id", nullable = false)
-    private Long userId; // External user ID
+    @Indexed
+    private String userId; // External user ID (String from User entity)
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
-    @Column(name = "team_id")
-    private Long teamId; // Optional: if access is for entire team
+    private String teamId; // Optional: if access is for entire team
     
-    @Column(name = "channel_id")
-    private Long channelId; // Optional: if access is for specific channel
+    private String channelId; // Optional: if access is for specific channel
     
-    @Column(name = "granted_by", nullable = false)
-    private Long grantedBy; // ADMIN who granted access
+    private String grantedBy; // ADMIN who granted access (String from User entity)
     
-    @Column(name = "granted_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime grantedAt;
     
-    @Column(name = "expires_at")
     private LocalDateTime expiresAt; // Optional: access expiration
-    
-    @PrePersist
-    protected void onCreate() {
-        grantedAt = LocalDateTime.now();
-    }
 }
 

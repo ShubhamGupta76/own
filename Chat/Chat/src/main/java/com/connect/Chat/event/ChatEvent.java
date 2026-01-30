@@ -19,13 +19,13 @@ import java.util.List;
 public class ChatEvent {
     
     private String eventType; // MESSAGE_SENT
-    private Long messageId;
-    private Long channelId;
-    private Long chatRoomId;
-    private Long senderId;
+    private String messageId;
+    private String channelId;
+    private String chatRoomId;
+    private String senderId;
     private String senderRole;
-    private List<Long> mentionedUserIds; // Users mentioned in the message
-    private Long organizationId;
+    private List<String> mentionedUserIds; // Users mentioned in the message
+    private String organizationId;
     private String messageContent;
     private LocalDateTime timestamp;
 }

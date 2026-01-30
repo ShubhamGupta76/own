@@ -49,7 +49,7 @@ export const TeamsPage: React.FC = () => {
         // Auto-select first team or team from URL
         if (teamList.length > 0) {
           const team = teamId
-            ? teamList.find((t) => t.id === Number(teamId))
+            ? teamList.find((t) => t.id === teamId)
             : teamList[0];
           
           if (team) {
@@ -82,7 +82,7 @@ export const TeamsPage: React.FC = () => {
   }, [teamId, user]);
 
   // Fetch channels when team is selected
-  const fetchChannels = async (teamId: number) => {
+  const fetchChannels = async (teamId: string) => {
     try {
       const channelList = await channelsApi.getChannelsByTeam(teamId);
       setChannels(channelList);
@@ -90,7 +90,7 @@ export const TeamsPage: React.FC = () => {
       // Auto-select "General" channel or channel from URL
       if (channelList.length > 0) {
         const channel = channelId
-          ? channelList.find((c) => c.id === Number(channelId))
+          ? channelList.find((c) => c.id === channelId)
           : channelList.find((c) => c.name.toLowerCase() === 'general') || channelList[0];
         
         if (channel) {
@@ -133,7 +133,7 @@ export const TeamsPage: React.FC = () => {
   };
 
   // Handle adding a member to the team
-  const handleAddMember = async (userId: number) => {
+  const handleAddMember = async (userId: string) => {
     if (!selectedTeam) {
       setAddMemberError('No team selected');
       return;

@@ -24,7 +24,7 @@ public class ChatPolicyController {
     private final ChatPolicyService chatPolicyService;
     private final JwtUtil jwtUtil;
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -41,8 +41,8 @@ public class ChatPolicyController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get chat policy", description = "Retrieves chat policy status for the organization.")
     public ResponseEntity<ChatPolicy> getChatPolicy(HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         return ResponseEntity.ok(chatPolicyService.getChatPolicy(organizationId));
@@ -54,8 +54,8 @@ public class ChatPolicyController {
     public ResponseEntity<ChatPolicy> updateChatPolicy(
             @RequestBody Map<String, Boolean> request,
             HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         Boolean enabled = request.get("enabled");

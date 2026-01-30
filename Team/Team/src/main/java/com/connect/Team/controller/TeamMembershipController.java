@@ -25,8 +25,8 @@ public class TeamMembershipController {
      */
     @GetMapping("/{teamId}/members/{userId}/check")
     public ResponseEntity<Map<String, Boolean>> checkTeamMembership(
-            @PathVariable Long teamId,
-            @PathVariable Long userId) {
+            @PathVariable String teamId,
+            @PathVariable String userId) {
         try {
             boolean isMember = teamManagementService.isTeamMember(teamId, userId);
             return ResponseEntity.ok(Map.of("isMember", isMember));

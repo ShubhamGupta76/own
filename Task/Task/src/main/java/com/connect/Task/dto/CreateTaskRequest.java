@@ -21,11 +21,11 @@ public class CreateTaskRequest {
     
     private String description;
     
-    private Long teamId;
+    private String teamId;
     
-    private Long channelId;
+    private String channelId;
     
-    private Long assignedTo;
+    private String assignedTo;
     
     private String taskType = "TASK"; // TASK, BUG, STORY
     

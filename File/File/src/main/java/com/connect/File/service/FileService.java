@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -45,9 +44,8 @@ public class FileService {
      * Upload a file
      * Stores file on filesystem and metadata in database
      */
-    @Transactional
-    public FileUploadResponse uploadFile(MultipartFile file, Long channelId, Long chatMessageId, 
-                                       Long uploadedBy, Long organizationId, String role) {
+    public FileUploadResponse uploadFile(MultipartFile file, String channelId, String chatMessageId, 
+                                       String uploadedBy, String organizationId, String role) {
         // Validate file policy
         validateFilePolicy(organizationId, file, role);
         
@@ -113,8 +111,7 @@ public class FileService {
     /**
      * Get files for a channel
      */
-    @Transactional(readOnly = true)
-    public List<FileMetadataResponse> getChannelFiles(Long channelId, Long organizationId) {
+    public List<FileMetadataResponse> getChannelFiles(String channelId, String organizationId) {
         List<FileMetadata> files = fileMetadataRepository.findByChannelIdAndOrganizationId(channelId, organizationId);
         
         return files.stream()
@@ -125,8 +122,7 @@ public class FileService {
     /**
      * Get file metadata by ID
      */
-    @Transactional(readOnly = true)
-    public FileMetadataResponse getFileMetadata(Long fileId, Long organizationId) {
+    public FileMetadataResponse getFileMetadata(String fileId, String organizationId) {
         FileMetadata file = fileMetadataRepository.findByIdAndOrganizationId(fileId, organizationId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
         
@@ -137,8 +133,7 @@ public class FileService {
      * Download file
      * Returns Resource for file download
      */
-    @Transactional(readOnly = true)
-    public Resource downloadFile(Long fileId, Long organizationId) {
+    public Resource downloadFile(String fileId, String organizationId) {
         FileMetadata file = fileMetadataRepository.findByIdAndOrganizationId(fileId, organizationId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
         
@@ -159,8 +154,7 @@ public class FileService {
     /**
      * Lock a file for editing
      */
-    @Transactional
-    public FileMetadataResponse lockFile(Long fileId, Long userId, Long organizationId) {
+    public FileMetadataResponse lockFile(String fileId, String userId, String organizationId) {
         FileMetadata file = fileMetadataRepository.findByIdAndOrganizationId(fileId, organizationId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
         
@@ -180,8 +174,7 @@ public class FileService {
     /**
      * Unlock a file
      */
-    @Transactional
-    public FileMetadataResponse unlockFile(Long fileId, Long userId, Long organizationId) {
+    public FileMetadataResponse unlockFile(String fileId, String userId, String organizationId) {
         FileMetadata file = fileMetadataRepository.findByIdAndOrganizationId(fileId, organizationId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
         
@@ -206,9 +199,8 @@ public class FileService {
      * Create new version of a file
      * Increments version number
      */
-    @Transactional
-    public FileUploadResponse createNewVersion(MultipartFile file, Long existingFileId, 
-                                              Long uploadedBy, Long organizationId, String role) {
+    public FileUploadResponse createNewVersion(MultipartFile file, String existingFileId, 
+                                              String uploadedBy, String organizationId, String role) {
         // Get existing file
         FileMetadata existingFile = fileMetadataRepository.findByIdAndOrganizationId(existingFileId, organizationId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
@@ -262,7 +254,7 @@ public class FileService {
     /**
      * Validate file policy
      */
-    private void validateFilePolicy(Long organizationId, MultipartFile file, String role) {
+    private void validateFilePolicy(String organizationId, MultipartFile file, String role) {
         FilePolicy policy = filePolicyRepository.findByOrganizationId(organizationId)
                 .orElse(FilePolicy.builder()
                         .organizationId(organizationId)

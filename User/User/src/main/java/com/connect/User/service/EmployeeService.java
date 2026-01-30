@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -29,7 +28,6 @@ public class EmployeeService {
      * Validate employee credentials for login
      * Called by Auth Service
      */
-    @Transactional(readOnly = true)
     public EmployeeValidationResponse validateEmployeeCredentials(EmployeeLoginRequest request) {
         log.info("Validating employee credentials for email: {}", request.getEmail());
         
@@ -87,7 +85,7 @@ public class EmployeeService {
         }
         
         // CRITICAL: EMPLOYEE users MUST have organizationId assigned
-        if (user.getOrganizationId() == null || user.getOrganizationId() == 0) {
+        if (user.getOrganizationId() == null || user.getOrganizationId().isEmpty()) {
             log.warn("Employee account has no organizationId. User ID: {}, Email: {}", user.getId(), user.getEmail());
             return EmployeeValidationResponse.builder()
                     .isValid(false)
@@ -143,8 +141,7 @@ public class EmployeeService {
      * Get employee profile by ID
      * Employee can only access their own profile
      */
-    @Transactional(readOnly = true)
-    public EmployeeProfileResponse getEmployeeProfile(Long userId, Long requestingUserId) {
+    public EmployeeProfileResponse getEmployeeProfile(String userId, String requestingUserId) {
         // Verify employee is accessing their own profile
         if (!userId.equals(requestingUserId)) {
             throw new RuntimeException("Access denied: You can only access your own profile");
@@ -164,8 +161,7 @@ public class EmployeeService {
     /**
      * Create or update employee profile on first login
      */
-    @Transactional
-    public EmployeeProfileResponse createOrUpdateEmployeeProfile(Long userId) {
+    public EmployeeProfileResponse createOrUpdateEmployeeProfile(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         

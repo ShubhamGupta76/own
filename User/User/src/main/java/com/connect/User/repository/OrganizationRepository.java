@@ -1,7 +1,7 @@
 package com.connect.User.repository;
 
 import com.connect.User.entity.Organization;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Optional;
  * Repository for Organization entity
  */
 @Repository
-public interface OrganizationRepository extends JpaRepository<Organization, Long> {
+public interface OrganizationRepository extends MongoRepository<Organization, String> {
     
     /**
      * Find organization by name
@@ -31,6 +31,6 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     /**
      * Find organization by admin ID
      */
-    Optional<Organization> findByAdminId(Long adminId);
+    Optional<Organization> findByAdminId(String adminId);
 }
 

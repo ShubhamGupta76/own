@@ -17,10 +17,10 @@ import java.util.List;
 @AllArgsConstructor
 public class TeamResponse {
     
-    private Long id;
+    private String id;
     private String name;
     private String description;
-    private Long organizationId;
+    private String organizationId;
     private Boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

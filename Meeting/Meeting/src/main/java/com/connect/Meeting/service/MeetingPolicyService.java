@@ -4,7 +4,6 @@ import com.connect.Meeting.entity.MeetingPolicy;
 import com.connect.Meeting.repository.MeetingPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -12,8 +11,7 @@ public class MeetingPolicyService {
     
     private final MeetingPolicyRepository meetingPolicyRepository;
     
-    @Transactional(readOnly = true)
-    public MeetingPolicy getMeetingPolicy(Long organizationId) {
+    public MeetingPolicy getMeetingPolicy(String organizationId) {
         return meetingPolicyRepository.findByOrganizationId(organizationId)
                 .orElseGet(() -> MeetingPolicy.builder()
                         .organizationId(organizationId)
@@ -23,8 +21,7 @@ public class MeetingPolicyService {
                         .build());
     }
     
-    @Transactional
-    public MeetingPolicy updateMeetingPolicy(Long organizationId, Boolean enabled, Integer maxDurationMinutes, Integer maxParticipants) {
+    public MeetingPolicy updateMeetingPolicy(String organizationId, Boolean enabled, Integer maxDurationMinutes, Integer maxParticipants) {
         MeetingPolicy policy = meetingPolicyRepository.findByOrganizationId(organizationId)
                 .orElseGet(() -> MeetingPolicy.builder()
                         .organizationId(organizationId)

@@ -161,9 +161,15 @@ export const TeamsChannelsSidebar: React.FC = () => {
   };
 
   // Handle adding a member to the team
-  const handleAddMember = async (userId: number) => {
+  const handleAddMember = async (userId: string) => {
     if (!selectedTeam) {
       setAddMemberError('No team selected');
+      return;
+    }
+    
+    if (!userId || userId.trim() === '') {
+      setAddMemberError('Invalid user ID');
+      console.error('handleAddMember called with invalid userId:', userId);
       return;
     }
     
@@ -171,6 +177,7 @@ export const TeamsChannelsSidebar: React.FC = () => {
       setIsAddingMember(true);
       setAddMemberError('');
       
+      console.log('Adding member:', { teamId: selectedTeam.id, userId, role: 'MEMBER' });
       await teamsApi.addMember(selectedTeam.id, userId, 'MEMBER');
       
       // Success - remove the added user from the list
@@ -181,7 +188,26 @@ export const TeamsChannelsSidebar: React.FC = () => {
       
     } catch (err: any) {
       const status = err.response?.status;
-      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to add member to team';
+      const errorData = err.response?.data;
+      
+      // Extract error message - check multiple possible locations
+      let errorMessage = errorData?.message || errorData?.error || err.message || 'Failed to add member to team';
+      
+      // If there are field errors, include them in the message
+      if (errorData?.fieldErrors) {
+        const fieldErrors = Object.entries(errorData.fieldErrors)
+          .map(([field, msg]) => `${field}: ${msg}`)
+          .join(', ');
+        errorMessage = `${errorMessage} (${fieldErrors})`;
+      }
+      
+      console.error('Error adding team member:', {
+        status,
+        errorData,
+        userId,
+        teamId: selectedTeam?.id,
+        requestBody: { userId, role: 'MEMBER' }
+      });
       
       if (status === 403) {
         setAddMemberError('Access denied: You do not have permission to add members to this team.');
@@ -194,7 +220,6 @@ export const TeamsChannelsSidebar: React.FC = () => {
       } else {
         setAddMemberError(errorMessage);
       }
-      console.error('Error adding team member:', err);
     } finally {
       setIsAddingMember(false);
     }

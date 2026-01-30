@@ -34,7 +34,7 @@ public class TaskController {
     /**
      * Extract user information from JWT token
      */
-    private Long getUserId(HttpServletRequest request) {
+    private String getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
@@ -44,7 +44,7 @@ public class TaskController {
         return jwtUtil.extractRole(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -68,15 +68,15 @@ public class TaskController {
             @Valid @RequestBody CreateTaskRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
+            String userId = getUserId(httpRequest);
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
             if (role == null || role.trim().isEmpty()) {
                 throw new RuntimeException("Access denied: User role is missing from token. Please log out and log back in.");
             }
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Your account may not be associated with an organization yet, or you're using an old token. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -95,23 +95,23 @@ public class TaskController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @Operation(summary = "Assign task", description = "Assigns a task to a user. Only ADMIN and MANAGER can assign tasks.")
     public ResponseEntity<TaskResponse> assignTask(
-            @PathVariable Long id,
-            @RequestBody Map<String, Long> request,
+            @PathVariable String id,
+            @RequestBody Map<String, Object> request,
             HttpServletRequest httpRequest) {
         try {
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
-            Long userId = request.get("userId");
+            String organizationId = getOrganizationId(httpRequest);
+            String userId = request.get("userId") != null ? request.get("userId").toString() : null;
             
             if (userId == null) {
                 throw new RuntimeException("User ID is required");
             }
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
-            Long assignedByUserId = getUserId(httpRequest);
+            String assignedByUserId = getUserId(httpRequest);
             TaskResponse task = taskService.assignTask(id, userId, organizationId, role, assignedByUserId);
             return ResponseEntity.ok(task);
         } catch (RuntimeException e) {
@@ -127,20 +127,20 @@ public class TaskController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Update task status", description = "Updates task status. ADMIN and MANAGER can update any task. EMPLOYEE can only update tasks assigned to them.")
     public ResponseEntity<TaskResponse> updateTaskStatus(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody Map<String, String> request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
+            String userId = getUserId(httpRequest);
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             String status = request.get("status");
             
             if (status == null) {
                 throw new RuntimeException("Status is required");
             }
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -159,14 +159,14 @@ public class TaskController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Add task comment", description = "Adds a comment to a task. All roles can comment.")
     public ResponseEntity<TaskCommentResponse> addComment(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody TaskCommentRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -185,12 +185,12 @@ public class TaskController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get channel tasks", description = "Retrieves all tasks for a channel.")
     public ResponseEntity<List<TaskResponse>> getChannelTasks(
-            @PathVariable Long channelId,
+            @PathVariable String channelId,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -209,12 +209,12 @@ public class TaskController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get task", description = "Retrieves task details with comments.")
     public ResponseEntity<TaskResponse> getTask(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -234,9 +234,9 @@ public class TaskController {
     @Operation(summary = "Get all tasks", description = "Retrieves all tasks in the organization.")
     public ResponseEntity<List<TaskResponse>> getAllTasks(HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -256,10 +256,10 @@ public class TaskController {
     @Operation(summary = "Get my tasks", description = "Retrieves tasks assigned to the logged-in user.")
     public ResponseEntity<List<TaskResponse>> getMyTasks(HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             

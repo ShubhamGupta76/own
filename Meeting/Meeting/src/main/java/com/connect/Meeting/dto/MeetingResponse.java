@@ -17,19 +17,19 @@ import java.util.List;
 @AllArgsConstructor
 public class MeetingResponse {
     
-    private Long id;
+    private String id;
     private String title;
     private String description;
-    private Long organizationId;
-    private Long createdBy;
+    private String organizationId;
+    private String createdBy;
     private String meetingType;
     private String status;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private LocalDateTime actualStartTime;
     private LocalDateTime actualEndTime;
-    private Long teamId;
-    private Long channelId;
+    private String teamId;
+    private String channelId;
     private String meetingUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

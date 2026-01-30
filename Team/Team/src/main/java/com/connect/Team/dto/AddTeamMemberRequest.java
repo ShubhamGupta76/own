@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class AddTeamMemberRequest {
     
     @NotNull(message = "User ID is required")
-    private Long userId;
+    private String userId;
     
     private String role = "MEMBER"; // OWNER, ADMIN, or MEMBER (default)
 }

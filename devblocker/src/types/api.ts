@@ -19,22 +19,22 @@ export type UserRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'EXTERNAL_USER';
 
 export interface LoginResponse {
   token: string;
-  userId: number;
+  userId: string;
   email: string;
   role: UserRole;
-  organizationId: number | null;
+  organizationId: string | null;
   isFirstLogin?: boolean;
   profileSetupRequired?: boolean;
 }
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
   firstName?: string;
   lastName?: string;
   displayName?: string;
   role: UserRole;
-  organizationId: number;
+  organizationId: string;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   lastLoginAt?: string;
@@ -43,10 +43,10 @@ export interface User {
 }
 
 export interface JWTPayload {
-  userId: number;
+  userId: string;
   email: string;
   role: UserRole;
-  organizationId: number;
+  organizationId: string;
   iat?: number;
   exp?: number;
 }
@@ -61,10 +61,10 @@ export interface OrganizationRegistrationRequest {
 }
 
 export interface Organization {
-  id: number;
+  id: string;
   name: string;
   domain?: string;
-  adminId: number;
+  adminId: string;
   active: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -72,46 +72,46 @@ export interface Organization {
 
 // Team & Channel Types
 export interface Team {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  organizationId: number;
-  createdBy: number;
+  organizationId: string;
+  createdBy: string;
   createdAt: string;
   updatedAt?: string;
 }
 
 export interface Channel {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  teamId: number;
+  teamId: string;
   type: 'STANDARD' | 'PRIVATE';
-  organizationId: number;
-  createdBy: number;
+  organizationId: string;
+  createdBy: string;
   createdAt: string;
   updatedAt?: string;
 }
 
 // Chat & Message Types
 export interface ChatRoom {
-  id: number;
+  id: string;
   roomType: 'CHANNEL' | 'TEAM' | 'DIRECT';
-  roomId: number; // channelId, teamId, or userId
-  organizationId: number;
+  roomId: string; // channelId, teamId, or userId
+  organizationId: string;
   createdAt: string;
 }
 
 export interface Message {
-  id: number;
-  chatRoomId: number;
-  senderId: number;
+  id: string;
+  chatRoomId: string;
+  senderId: string;
   senderRole: string;
   content: string;
   messageType: 'TEXT' | 'FILE' | 'LINK' | 'EMOJI' | 'GIF' | 'SYSTEM';
-  fileId?: number;
+  fileId?: string;
   metadata?: Record<string, any>;
-  organizationId: number;
+  organizationId: string;
   status: 'SENT' | 'DELIVERED' | 'READ';
   createdAt: string;
   timestamp?: Date | string; // Add timestamp for compatibility
@@ -119,16 +119,16 @@ export interface Message {
 }
 
 export interface SendMessageRequest {
-  chatRoomId: number;
+  chatRoomId: string;
   content: string;
   messageType?: 'TEXT' | 'FILE' | 'LINK' | 'EMOJI' | 'GIF';
-  fileId?: number;
+  fileId?: string;
   metadata?: Record<string, any>;
 }
 
 // Meeting Types
 export interface Meeting {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   meetingType: 'INSTANT' | 'SCHEDULED';
@@ -137,10 +137,10 @@ export interface Meeting {
   endTime?: string;
   scheduledAt?: string;
   meetingUrl?: string;
-  teamId?: number;
-  channelId?: number;
-  createdBy: number;
-  organizationId: number;
+  teamId?: string;
+  channelId?: string;
+  createdBy: string;
+  organizationId: string;
   createdAt: string;
   endedAt?: string;
 }
@@ -148,10 +148,10 @@ export interface Meeting {
 export interface CreateInstantCallRequest {
   title: string;
   description?: string;
-  teamId?: number;
-  channelId?: number;
+  teamId?: string;
+  channelId?: string;
   meetingUrl?: string;
-  participantIds: number[];
+  participantIds: string[];
 }
 
 export interface ScheduleMeetingRequest {
@@ -159,88 +159,88 @@ export interface ScheduleMeetingRequest {
   description?: string;
   startTime: string;
   endTime: string;
-  teamId?: number;
-  channelId?: number;
+  teamId?: string;
+  channelId?: string;
   meetingUrl?: string;
-  participantIds: number[];
+  participantIds: string[];
 }
 
 export interface MeetingNote {
-  id: number;
-  meetingId: number;
+  id: string;
+  meetingId: string;
   content: string;
-  createdBy: number;
+  createdBy: string;
   createdAt: string;
 }
 
 // File Types
 export interface FileMetadata {
-  id: number;
+  id: string;
   filename: string;
   size: number;
   contentType: string;
-  channelId?: number;
-  chatMessageId?: number;
-  uploadedBy: number;
-  organizationId: number;
+  channelId?: string;
+  chatMessageId?: string;
+  uploadedBy: string;
+  organizationId: string;
   version: number;
-  lockedBy?: number;
+  lockedBy?: string;
   uploadedAt: string;
 }
 
 export interface UploadFileRequest {
   file: File;
-  channelId?: number;
+  channelId?: string;
 }
 
 // Task Types
 export interface Task {
-  id: number;
+  id: string;
   title: string;
   description?: string;
-  channelId: number;
-  teamId: number;
+  channelId: string;
+  teamId: string;
   taskType: 'TASK' | 'BUG' | 'STORY';
   status: 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE';
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
-  assignedTo?: number;
-  createdBy: number;
-  organizationId: number;
+  assignedTo?: string;
+  createdBy: string;
+  organizationId: string;
   dueDate?: string;
   createdAt: string;
   updatedAt?: string;
 }
 
 export interface TaskComment {
-  id: number;
-  taskId: number;
+  id: string;
+  taskId: string;
   content: string;
-  createdBy: number;
+  createdBy: string;
   createdAt: string;
 }
 
 export interface CreateTaskRequest {
   title: string;
   description?: string;
-  channelId: number;
+  channelId: string;
   taskType: 'TASK' | 'BUG' | 'STORY';
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
-  assignedTo?: number;
+  assignedTo?: string;
   dueDate?: string;
 }
 
 // Notification Types
 export interface Notification {
-  id: number;
-  userId: number;
-  organizationId: number;
+  id: string;
+  userId: string;
+  organizationId: string;
   type: 'SYSTEM' | 'MENTION' | 'TASK' | 'FILE' | 'MEETING' | 'MESSAGE' | 'ACTIVITY';
   title: string;
   message: string;
   targetEntityType?: 'USER' | 'TEAM' | 'CHANNEL' | 'TASK' | 'FILE' | 'MEETING' | 'MESSAGE';
-  targetEntityId?: number;
+  targetEntityId?: string;
   targetEntityName?: string;
-  sourceId?: number;
+  sourceId?: string;
   read: boolean;
   createdAt: string;
   timestamp?: Date | string; // Add timestamp for compatibility
@@ -250,8 +250,8 @@ export interface Notification {
 export interface ChatEvent {
   type: 'MESSAGE_RECEIVED' | 'USER_TYPING' | 'USER_STOPPED_TYPING';
   message?: Message;
-  chatRoomId?: number;
-  userId?: number;
+  chatRoomId?: string;
+  userId?: string;
 }
 
 export interface NotificationEvent {
@@ -262,11 +262,11 @@ export interface NotificationEvent {
 // WebRTC Signaling Types
 export interface WebRTCSignalingMessage {
   type: 'OFFER' | 'ANSWER' | 'ICE_CANDIDATE' | 'USER_JOINED' | 'USER_LEFT' | 'LEAVE_MEETING';
-  meetingId: number;
-  senderId: number; // Alias for fromUserId for consistency
-  fromUserId: number; // Legacy alias
-  targetUserId?: number; // Alias for toUserId for consistency
-  toUserId?: number; // Legacy alias - undefined means broadcast to all
+  meetingId: string;
+  senderId: string; // Alias for fromUserId for consistency
+  fromUserId: string; // Legacy alias
+  targetUserId?: string; // Alias for toUserId for consistency
+  toUserId?: string; // Legacy alias - undefined means broadcast to all
   data?: {
     offer?: RTCSessionDescriptionInit;
     answer?: RTCSessionDescriptionInit;
@@ -280,7 +280,7 @@ export interface WebRTCSignalingMessage {
 }
 
 export interface MeetingParticipant {
-  userId: number;
+  userId: string;
   email: string;
   displayName?: string;
   isMuted: boolean;

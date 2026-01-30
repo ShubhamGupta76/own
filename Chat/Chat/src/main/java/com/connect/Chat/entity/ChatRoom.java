@@ -1,10 +1,15 @@
 package com.connect.Chat.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 
 import java.time.LocalDateTime;
 
@@ -12,13 +17,9 @@ import java.time.LocalDateTime;
  * ChatRoom entity
  * Represents a chat room (channel, team, or direct chat)
  */
-@Entity
-@Table(name = "chat_rooms", uniqueConstraints = {
-    // For CHANNEL and TEAM: unique by room_type, room_id, organization_id
-    @UniqueConstraint(name = "uk_room_type_room_id_org", columnNames = {"room_type", "room_id", "organization_id"}),
-    // For DIRECT: unique by room_type, user1_id, user2_id, organization_id
-    @UniqueConstraint(name = "uk_direct_chat_users", columnNames = {"room_type", "user1_id", "user2_id", "organization_id"})
-})
+@Document(collection = "chat_rooms")
+@CompoundIndex(name = "room_type_room_id_org_idx", def = "{'roomType': 1, 'roomId': 1, 'organizationId': 1}", unique = true, partialFilter = "{'roomId': {$exists: true}}")
+@CompoundIndex(name = "direct_chat_users_idx", def = "{'roomType': 1, 'user1Id': 1, 'user2Id': 1, 'organizationId': 1}", unique = true, partialFilter = "{'roomType': 'DIRECT'}")
 @Data
 @Builder
 @NoArgsConstructor
@@ -26,41 +27,24 @@ import java.time.LocalDateTime;
 public class ChatRoom {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "room_type", nullable = false)
-    @Enumerated(EnumType.STRING)
     private RoomType roomType; // CHANNEL, TEAM, DIRECT
     
-    @Column(name = "room_id", nullable = true)
-    private Long roomId; // Channel ID, Team ID, or null for direct chat
+    private String roomId; // Channel ID, Team ID, or null for direct chat
     
-    @Column(name = "user1_id")
-    private Long user1Id; // For DIRECT chat: first user ID
+    private String user1Id; // For DIRECT chat: first user ID
     
-    @Column(name = "user2_id")
-    private Long user2Id; // For DIRECT chat: second user ID
+    private String user2Id; // For DIRECT chat: second user ID
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
     
     public enum RoomType {
         CHANNEL,  // Channel chat

@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -27,7 +26,6 @@ public class EmployeeAuthService {
     private final WebClient webClient;
     
     
-    @Transactional(readOnly = true)
     public AuthResponse loginEmployee(LoginRequest request) {
         try {
             Map<String, Object> validationRequest = new HashMap<>();
@@ -75,7 +73,7 @@ public class EmployeeAuthService {
             
             // CRITICAL: EMPLOYEE users MUST have organizationId assigned
             if ("EMPLOYEE".equalsIgnoreCase(validationResponse.getRole()) && 
-                (validationResponse.getOrganizationId() == null || validationResponse.getOrganizationId() == 0)) {
+                (validationResponse.getOrganizationId() == null || validationResponse.getOrganizationId().isEmpty())) {
                 throw new RuntimeException("Employee account is not assigned to an organization. Please contact your administrator.");
             }
             
@@ -112,11 +110,11 @@ public class EmployeeAuthService {
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
     public static class EmployeeValidationResponse {
-        private Long userId;
+        private String userId;
         private String email;
         private String firstName;
         private String lastName;
-        private Long organizationId;
+        private String organizationId;
         private String role; 
         private Boolean isValid;
         private Boolean isFirstLogin;

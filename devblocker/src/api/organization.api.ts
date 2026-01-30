@@ -15,10 +15,10 @@ export interface OrganizationRequest {
 export interface OrganizationResponse {
   organization: Organization;
   token: string;
-  userId: number;
+  userId: string;
   email: string;
   role: string;
-  organizationId: number;
+  organizationId: string;
   message?: string;
 }
 

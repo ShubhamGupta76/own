@@ -19,7 +19,7 @@ export const tasksApi = {
   /**
    * Assign task
    */
-  assignTask: async (taskId: number, userId: number): Promise<void> => {
+  assignTask: async (taskId: string, userId: string): Promise<void> => {
     await apiClient.put(API_CONFIG.ENDPOINTS.TASKS.ASSIGN(taskId), { userId });
   },
 
@@ -27,7 +27,7 @@ export const tasksApi = {
    * Update task status
    */
   updateTaskStatus: async (
-    taskId: number,
+    taskId: string,
     status: 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE'
   ): Promise<void> => {
     await apiClient.put(API_CONFIG.ENDPOINTS.TASKS.UPDATE_STATUS(taskId), { status });
@@ -36,7 +36,7 @@ export const tasksApi = {
   /**
    * Add task comment
    */
-  addComment: async (taskId: number, content: string): Promise<TaskComment> => {
+  addComment: async (taskId: string, content: string): Promise<TaskComment> => {
     const response = await apiClient.post<TaskComment>(
       API_CONFIG.ENDPOINTS.TASKS.COMMENT(taskId),
       { content }
@@ -47,7 +47,7 @@ export const tasksApi = {
   /**
    * Get tasks by channel
    */
-  getTasksByChannel: async (channelId: number): Promise<Task[]> => {
+  getTasksByChannel: async (channelId: string): Promise<Task[]> => {
     const response = await apiClient.get<Task[]>(
       API_CONFIG.ENDPOINTS.TASKS.BY_CHANNEL(channelId)
     );
@@ -57,7 +57,7 @@ export const tasksApi = {
   /**
    * Get task by ID
    */
-  getTask: async (taskId: number): Promise<Task> => {
+  getTask: async (taskId: string): Promise<Task> => {
     const response = await apiClient.get<Task>(API_CONFIG.ENDPOINTS.TASKS.BY_ID(taskId));
     return response.data;
   },

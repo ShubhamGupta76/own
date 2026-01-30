@@ -36,7 +36,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Redirect ADMIN users without organizationId to onboarding
   // Skip this check if already on onboarding page
   if (role === 'ADMIN' && 
-      (!user?.organizationId || user.organizationId === 0) &&
+      (!user?.organizationId || user.organizationId === '' || user.organizationId === '0') &&
       location.pathname !== '/admin/onboarding') {
     return <Navigate to="/admin/onboarding" replace />;
   }

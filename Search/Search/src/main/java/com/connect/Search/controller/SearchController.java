@@ -24,7 +24,7 @@ public class SearchController {
     private final SearchService searchService;
     private final JwtUtil jwtUtil;
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -44,8 +44,8 @@ public class SearchController {
             @RequestParam String query,
             @RequestParam(required = false) String type,
             HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         return ResponseEntity.ok(searchService.search(organizationId, query, type));

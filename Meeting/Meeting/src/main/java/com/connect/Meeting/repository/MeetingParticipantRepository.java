@@ -1,7 +1,7 @@
 package com.connect.Meeting.repository;
 
 import com.connect.Meeting.entity.MeetingParticipant;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,16 +11,16 @@ import java.util.Optional;
  * Repository for MeetingParticipant entity
  */
 @Repository
-public interface MeetingParticipantRepository extends JpaRepository<MeetingParticipant, Long> {
+public interface MeetingParticipantRepository extends MongoRepository<MeetingParticipant, String> {
     
-    List<MeetingParticipant> findByMeetingId(Long meetingId);
+    List<MeetingParticipant> findByMeetingId(String meetingId);
     
-    List<MeetingParticipant> findByUserId(Long userId);
+    List<MeetingParticipant> findByUserId(String userId);
     
-    Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId);
+    Optional<MeetingParticipant> findByMeetingIdAndUserId(String meetingId, String userId);
     
-    List<MeetingParticipant> findByMeetingIdAndIsActiveTrue(Long meetingId);
+    List<MeetingParticipant> findByMeetingIdAndIsActiveTrue(String meetingId);
     
-    boolean existsByMeetingIdAndUserId(Long meetingId, Long userId);
+    boolean existsByMeetingIdAndUserId(String meetingId, String userId);
 }
 

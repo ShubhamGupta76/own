@@ -18,10 +18,10 @@ public class OrganizationResponse {
     
     private Organization organization;
     private String token;
-    private Long userId;
+    private String userId;
     private String email;
     private String role;
-    private Long organizationId;
+    private String organizationId;
     private String message;
 }
 

@@ -23,7 +23,7 @@ export const ChatsPage: React.FC = () => {
     setSelectedUser(user);
   };
 
-  const createInstantMeeting = async (title: string, participantIds: number[]) => {
+  const createInstantMeeting = async (title: string, participantIds: string[]) => {
     try {
       setIsCreatingCall(true);
       const meeting = await meetingsApi.createInstantCall({

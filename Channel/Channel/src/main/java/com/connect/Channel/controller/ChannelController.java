@@ -24,7 +24,7 @@ public class ChannelController {
     private final ChannelService channelService;
     private final JwtUtil jwtUtil;
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -41,8 +41,8 @@ public class ChannelController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all channels", description = "Retrieves all channels in the admin's organization.")
     public ResponseEntity<List<ChannelResponse>> getChannels(HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         return ResponseEntity.ok(channelService.getChannelsByOrganization(organizationId));
@@ -52,10 +52,10 @@ public class ChannelController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get channels by team", description = "Retrieves all channels under a specific team.")
     public ResponseEntity<List<ChannelResponse>> getChannelsByTeam(
-            @PathVariable Long teamId,
+            @PathVariable String teamId,
             HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         return ResponseEntity.ok(channelService.getChannelsByTeam(teamId, organizationId));
@@ -65,10 +65,10 @@ public class ChannelController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get channel", description = "Retrieves channel details with members and permissions.")
     public ResponseEntity<ChannelResponse> getChannel(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         return ResponseEntity.ok(channelService.getChannelById(id, organizationId));

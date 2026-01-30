@@ -7,7 +7,6 @@ import com.connect.User.repository.OrganizationRepository;
 import com.connect.User.repository.PolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,8 +23,7 @@ public class PolicyService {
     /**
      * Get or create policy for an organization
      */
-    @Transactional
-    public Policy getOrCreatePolicy(Long organizationId, Policy.PolicyType policyType, Long adminId) {
+    public Policy getOrCreatePolicy(String organizationId, Policy.PolicyType policyType, String adminId) {
         // Verify organization exists and admin owns it
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
@@ -48,8 +46,7 @@ public class PolicyService {
     /**
      * Update policy (enable/disable)
      */
-    @Transactional
-    public Policy updatePolicy(Long organizationId, PolicyRequest request, Long adminId) {
+    public Policy updatePolicy(String organizationId, PolicyRequest request, String adminId) {
         // Verify organization exists and admin owns it
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
@@ -74,8 +71,7 @@ public class PolicyService {
     /**
      * Get all policies for an organization
      */
-    @Transactional(readOnly = true)
-    public List<Policy> getPoliciesByOrganization(Long organizationId, Long adminId) {
+    public List<Policy> getPoliciesByOrganization(String organizationId, String adminId) {
         // Verify organization exists and admin owns it
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
@@ -90,8 +86,7 @@ public class PolicyService {
     /**
      * Get specific policy
      */
-    @Transactional(readOnly = true)
-    public Policy getPolicy(Long organizationId, Policy.PolicyType policyType, Long adminId) {
+    public Policy getPolicy(String organizationId, Policy.PolicyType policyType, String adminId) {
         return getOrCreatePolicy(organizationId, policyType, adminId);
     }
 }

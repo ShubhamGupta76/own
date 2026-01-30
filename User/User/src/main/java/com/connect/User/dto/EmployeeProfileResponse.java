@@ -16,12 +16,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class EmployeeProfileResponse {
     
-    private Long id;
+    private String id;
     private String email;
     private String firstName;
     private String lastName;
     private String displayName;
-    private Long organizationId;
+    private String organizationId;
     private String role;
     private Boolean active;
     private Boolean isFirstLogin;

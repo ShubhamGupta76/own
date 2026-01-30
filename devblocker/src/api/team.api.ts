@@ -35,7 +35,7 @@ export const teamsApi = {
   /**
    * Add member to team
    */
-  addMember: async (teamId: number, userId: number, role?: string): Promise<void> => {
+  addMember: async (teamId: string, userId: string, role?: string): Promise<void> => {
     await apiClient.post(API_CONFIG.ENDPOINTS.TEAMS.ADD_MEMBER(teamId), { 
       userId,
       role: role || 'MEMBER' // OWNER, ADMIN, or MEMBER (default)
@@ -45,7 +45,7 @@ export const teamsApi = {
   /**
    * Remove member from team
    */
-  removeMember: async (teamId: number, userId: number): Promise<void> => {
+  removeMember: async (teamId: string, userId: string): Promise<void> => {
     await apiClient.delete(API_CONFIG.ENDPOINTS.TEAMS.REMOVE_MEMBER(teamId, userId));
   },
 };

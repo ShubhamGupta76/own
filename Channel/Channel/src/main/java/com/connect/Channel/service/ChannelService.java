@@ -11,7 +11,6 @@ import com.connect.Channel.repository.ChannelPermissionRepository;
 import com.connect.Channel.repository.ChannelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,8 +23,7 @@ public class ChannelService {
     private final ChannelMemberRepository channelMemberRepository;
     private final ChannelPermissionRepository channelPermissionRepository;
     
-    @Transactional(readOnly = true)
-    public List<ChannelResponse> getChannelsByOrganization(Long organizationId) {
+    public List<ChannelResponse> getChannelsByOrganization(String organizationId) {
         List<Channel> channels = channelRepository.findByOrganizationId(organizationId);
         
         return channels.stream()
@@ -33,8 +31,7 @@ public class ChannelService {
                 .collect(Collectors.toList());
     }
     
-    @Transactional(readOnly = true)
-    public List<ChannelResponse> getChannelsByTeam(Long teamId, Long organizationId) {
+    public List<ChannelResponse> getChannelsByTeam(String teamId, String organizationId) {
         List<Channel> channels = channelRepository.findByTeamId(teamId);
         
         return channels.stream()
@@ -43,8 +40,7 @@ public class ChannelService {
                 .collect(Collectors.toList());
     }
     
-    @Transactional(readOnly = true)
-    public ChannelResponse getChannelById(Long channelId, Long organizationId) {
+    public ChannelResponse getChannelById(String channelId, String organizationId) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found"));
         

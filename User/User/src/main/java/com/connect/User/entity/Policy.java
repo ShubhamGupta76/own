@@ -1,10 +1,15 @@
 package com.connect.User.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 
 import java.time.LocalDateTime;
 
@@ -12,10 +17,8 @@ import java.time.LocalDateTime;
  * Policy entity for organization-level feature control
  * Controls: Chat, Meeting, File Sharing
  */
-@Entity
-@Table(name = "policies", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"organization_id", "policy_type"})
-})
+@Document(collection = "policies")
+@CompoundIndex(name = "org_policy_idx", def = "{'organizationId': 1, 'policyType': 1}", unique = true)
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,35 +26,20 @@ import java.time.LocalDateTime;
 public class Policy {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
-    @Column(name = "policy_type", nullable = false)
-    @Enumerated(EnumType.STRING)
     private PolicyType policyType;
     
-    @Column(nullable = false)
     private Boolean enabled = true;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
     
     public enum PolicyType {
         CHAT,

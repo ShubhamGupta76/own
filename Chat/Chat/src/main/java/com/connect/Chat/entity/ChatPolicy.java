@@ -1,10 +1,14 @@
 package com.connect.Chat.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
@@ -12,10 +16,7 @@ import java.time.LocalDateTime;
  * Chat Policy entity
  * Controls chat feature at organization level
  */
-@Entity
-@Table(name = "chat_policies", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"organization_id"})
-})
+@Document(collection = "chat_policies")
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,31 +24,18 @@ import java.time.LocalDateTime;
 public class ChatPolicy {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "organization_id", nullable = false, unique = true)
-    private Long organizationId;
+    @Indexed(unique = true)
+    private String organizationId;
     
-    @Column(nullable = false)
     @Builder.Default
     private Boolean enabled = true;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
 

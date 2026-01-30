@@ -56,7 +56,7 @@ public class EmployeeController {
     @Operation(summary = "Get my profile", description = "Retrieves the logged-in employee's profile. Employee can only access their own profile.")
     public ResponseEntity<EmployeeProfileResponse> getMyProfile(HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
+            String userId = getUserId(httpRequest);
             EmployeeProfileResponse profile = employeeService.getEmployeeProfile(userId, userId);
             return ResponseEntity.ok(profile);
         } catch (RuntimeException e) {
@@ -73,7 +73,7 @@ public class EmployeeController {
     @Operation(summary = "Create/update profile", description = "Creates or updates employee profile on first login. Sets display name and marks as not first login.")
     public ResponseEntity<EmployeeProfileResponse> createOrUpdateProfile(HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
+            String userId = getUserId(httpRequest);
             EmployeeProfileResponse profile = employeeService.createOrUpdateEmployeeProfile(userId);
             return ResponseEntity.ok(profile);
         } catch (RuntimeException e) {
@@ -84,7 +84,7 @@ public class EmployeeController {
     /**
      * Extract user ID from JWT token
      */
-    private Long getUserId(HttpServletRequest request) {
+    private String getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }

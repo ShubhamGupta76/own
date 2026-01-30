@@ -20,11 +20,11 @@ public class InstantCallRequest {
     
     private String description;
     
-    private List<Long> participantIds; // User IDs to invite (optional for 1-to-1)
+    private List<String> participantIds; // User IDs to invite (optional for 1-to-1)
     
-    private Long teamId; // Optional: if call is for a team
+    private String teamId; // Optional: if call is for a team
     
-    private Long channelId; // Optional: if call is for a channel
+    private String channelId; // Optional: if call is for a channel
     
     private String meetingUrl; // Video conferencing URL
 }

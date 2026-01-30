@@ -28,11 +28,11 @@ public class ScheduleMeetingRequest {
     @NotNull(message = "End time is required")
     private LocalDateTime endTime;
     
-    private List<Long> participantIds; // User IDs to invite
+    private List<String> participantIds; // User IDs to invite
     
-    private Long teamId; // Optional: if meeting is for a team
+    private String teamId; // Optional: if meeting is for a team
     
-    private Long channelId; // Optional: if meeting is for a channel
+    private String channelId; // Optional: if meeting is for a channel
     
     private String meetingUrl; // Video conferencing URL
 }

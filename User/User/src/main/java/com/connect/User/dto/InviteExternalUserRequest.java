@@ -26,8 +26,8 @@ public class InviteExternalUserRequest {
     @NotBlank(message = "Last name is required")
     private String lastName;
     
-    private List<Long> teamIds; // Teams to grant access to
+    private List<String> teamIds; // Teams to grant access to
     
-    private List<Long> channelIds; // Channels to grant access to
+    private List<String> channelIds; // Channels to grant access to
 }
 

@@ -1,17 +1,18 @@
 package com.connect.File.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "file_policies", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"organization_id"})
-})
+@Document(collection = "file_policies")
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,36 +20,22 @@ import java.time.LocalDateTime;
 public class FilePolicy {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "organization_id", nullable = false, unique = true)
-    private Long organizationId;
+    @Indexed(unique = true)
+    private String organizationId;
     
-    @Column(nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
     
-    @Column(name = "max_file_size_mb")
     private Integer maxFileSizeMb;
     
-    @Column(name = "allowed_file_types")
     private String allowedFileTypes; // Comma-separated
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
 

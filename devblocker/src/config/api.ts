@@ -6,10 +6,14 @@
 // Get API Gateway URL from environment or use default
 const API_GATEWAY_PORT = import.meta.env.VITE_API_GATEWAY_PORT || '8080';
 const API_GATEWAY_HOST = import.meta.env.VITE_API_GATEWAY_HOST || 'localhost';
+const API_GATEWAY_PROTOCOL = import.meta.env.VITE_API_GATEWAY_PROTOCOL || 'http';
+
+// Use wss:// for WebSocket if using HTTPS
+const WS_PROTOCOL = API_GATEWAY_PROTOCOL === 'https' ? 'wss' : 'ws';
 
 export const API_CONFIG = {
-  BASE_URL: `http://${API_GATEWAY_HOST}:${API_GATEWAY_PORT}`,
-  WS_BASE_URL: `ws://${API_GATEWAY_HOST}:${API_GATEWAY_PORT}`,
+  BASE_URL: `${API_GATEWAY_PROTOCOL}://${API_GATEWAY_HOST}${API_GATEWAY_PORT !== '443' && API_GATEWAY_PORT !== '80' ? `:${API_GATEWAY_PORT}` : ''}`,
+  WS_BASE_URL: `${WS_PROTOCOL}://${API_GATEWAY_HOST}${API_GATEWAY_PORT !== '443' && API_GATEWAY_PORT !== '80' ? `:${API_GATEWAY_PORT}` : ''}`,
   
   // API Endpoints
   ENDPOINTS: {
@@ -25,7 +29,7 @@ export const API_CONFIG = {
     // User
     USER: {
       PROFILE: '/users/profile', // Note: This endpoint doesn't exist - use USER_BY_ID with userId from token
-      USER_BY_ID: (userId: number) => `/users/${userId}`,
+      USER_BY_ID: (userId: string) => `/users/${userId}`,
       USERS: '/users',
     },
     
@@ -40,56 +44,56 @@ export const API_CONFIG = {
       LIST: '/teams',
       MY_TEAMS: '/teams/my',
       CREATE: '/teams',
-      ADD_MEMBER: (teamId: number) => `/teams/${teamId}/members`,
-      REMOVE_MEMBER: (teamId: number, userId: number) => `/teams/${teamId}/members/${userId}`,
+      ADD_MEMBER: (teamId: string) => `/teams/${teamId}/members`,
+      REMOVE_MEMBER: (teamId: string, userId: string) => `/teams/${teamId}/members/${userId}`,
     },
     
     // Channels
     CHANNELS: {
-      BY_TEAM: (teamId: number) => `/channels/teams/${teamId}/channels`,
-      CREATE: (teamId: number) => `/channels/teams/${teamId}/channels`,
-      MEMBERS: (channelId: number) => `/channels/channels/${channelId}/members`,
-      ADD_MEMBER: (channelId: number) => `/channels/channels/${channelId}/members`,
-      REMOVE_MEMBER: (channelId: number, userId: number) => `/channels/channels/${channelId}/members/${userId}`,
+      BY_TEAM: (teamId: string) => `/channels/teams/${teamId}/channels`,
+      CREATE: (teamId: string) => `/channels/teams/${teamId}/channels`,
+      MEMBERS: (channelId: string) => `/channels/channels/${channelId}/members`,
+      ADD_MEMBER: (channelId: string) => `/channels/channels/${channelId}/members`,
+      REMOVE_MEMBER: (channelId: string, userId: string) => `/channels/channels/${channelId}/members/${userId}`,
     },
     
     // Chat
     CHAT: {
       SEND: '/chat/send',
-      CHANNEL_MESSAGES: (channelId: number) => `/chat/channel/${channelId}`,
-      DIRECT_MESSAGES: (userId: number) => `/chat/direct/${userId}`,
+      CHANNEL_MESSAGES: (channelId: string) => `/chat/channel/${channelId}`,
+      DIRECT_MESSAGES: (userId: string) => `/chat/direct/${userId}`,
     },
     
     // Meetings
     MEETINGS: {
       INSTANT: '/meetings/instant',
       SCHEDULE: '/meetings/schedule',
-      JOIN: (meetingId: number) => `/meetings/${meetingId}/join`,
-      LEAVE: (meetingId: number) => `/meetings/${meetingId}/leave`,
-      SCREEN_SHARE_START: (meetingId: number) => `/meetings/${meetingId}/screen-share/start`,
-      SCREEN_SHARE_STOP: (meetingId: number) => `/meetings/${meetingId}/screen-share/stop`,
-      RECORDING_START: (meetingId: number) => `/meetings/${meetingId}/recording/start`,
-      RECORDING_STOP: (meetingId: number) => `/meetings/${meetingId}/recording/stop`,
-      NOTES: (meetingId: number) => `/meetings/${meetingId}/notes`,
+      JOIN: (meetingId: string) => `/meetings/${meetingId}/join`,
+      LEAVE: (meetingId: string) => `/meetings/${meetingId}/leave`,
+      SCREEN_SHARE_START: (meetingId: string) => `/meetings/${meetingId}/screen-share/start`,
+      SCREEN_SHARE_STOP: (meetingId: string) => `/meetings/${meetingId}/screen-share/stop`,
+      RECORDING_START: (meetingId: string) => `/meetings/${meetingId}/recording/start`,
+      RECORDING_STOP: (meetingId: string) => `/meetings/${meetingId}/recording/stop`,
+      NOTES: (meetingId: string) => `/meetings/${meetingId}/notes`,
     },
     
     // Files
     FILES: {
       UPLOAD: '/files/upload',
-      CHANNEL_FILES: (channelId: number) => `/files/channel/${channelId}`,
-      DOWNLOAD: (fileId: number) => `/files/${fileId}/download`,
-      LOCK: (fileId: number) => `/files/${fileId}/lock`,
-      UNLOCK: (fileId: number) => `/files/${fileId}/unlock`,
+      CHANNEL_FILES: (channelId: string) => `/files/channel/${channelId}`,
+      DOWNLOAD: (fileId: string) => `/files/${fileId}/download`,
+      LOCK: (fileId: string) => `/files/${fileId}/lock`,
+      UNLOCK: (fileId: string) => `/files/${fileId}/unlock`,
     },
     
     // Tasks
     TASKS: {
       CREATE: '/tasks',
-      ASSIGN: (taskId: number) => `/tasks/${taskId}/assign`,
-      UPDATE_STATUS: (taskId: number) => `/tasks/${taskId}/status`,
-      COMMENT: (taskId: number) => `/tasks/${taskId}/comments`,
-      BY_CHANNEL: (channelId: number) => `/tasks/channel/${channelId}`,
-      BY_ID: (taskId: number) => `/tasks/${taskId}`,
+      ASSIGN: (taskId: string) => `/tasks/${taskId}/assign`,
+      UPDATE_STATUS: (taskId: string) => `/tasks/${taskId}/status`,
+      COMMENT: (taskId: string) => `/tasks/${taskId}/comments`,
+      BY_CHANNEL: (channelId: string) => `/tasks/channel/${channelId}`,
+      BY_ID: (taskId: string) => `/tasks/${taskId}`,
     },
     
     // Notifications
@@ -97,7 +101,7 @@ export const API_CONFIG = {
       LIST: '/notifications',
       UNREAD: '/notifications/unread',
       UNREAD_COUNT: '/notifications/unread/count',
-      MARK_READ: (notificationId: number) => `/notifications/${notificationId}/read`,
+      MARK_READ: (notificationId: string) => `/notifications/${notificationId}/read`,
       MARK_ALL_READ: '/notifications/read-all',
       ACTIVITY: '/notifications/activity',
     },
@@ -105,11 +109,11 @@ export const API_CONFIG = {
   
   // WebSocket Topics
   WS_TOPICS: {
-    CHAT_CHANNEL: (channelId: number) => `/topic/channel/${channelId}`,
-    CHAT_USER: (userId: number) => `/topic/user/${userId}`,
-    NOTIFICATIONS: (userId: number) => `/topic/notifications/${userId}`,
-    MEETING: (meetingId: number) => `/topic/meeting/${meetingId}`,
-    MEETING_SIGNALING: (meetingId: number) => `/topic/meeting/${meetingId}/signaling`,
+    CHAT_CHANNEL: (channelId: string) => `/topic/channel/${channelId}`,
+    CHAT_USER: (userId: string) => `/topic/user/${userId}`,
+    NOTIFICATIONS: (userId: string) => `/topic/notifications/${userId}`,
+    MEETING: (meetingId: string) => `/topic/meeting/${meetingId}`,
+    MEETING_SIGNALING: (meetingId: string) => `/topic/meeting/${meetingId}/signaling`,
   },
   
   // ICE Servers (STUN/TURN)

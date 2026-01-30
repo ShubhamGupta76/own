@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 public class FileEvent {
     
     private String eventType; // FILE_UPLOADED, FILE_DELETED
-    private Long fileId;
+    private String fileId;
     private String filename;
-    private Long channelId;
-    private Long uploadedBy; // User ID who uploaded/deleted
-    private Long organizationId;
+    private String channelId;
+    private String uploadedBy; // User ID who uploaded/deleted
+    private String organizationId;
     private Long fileSize;
     private String contentType;
     private LocalDateTime timestamp;

@@ -3,9 +3,8 @@ package com.connect.Chat.repository;
 import com.connect.Chat.entity.Message;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,33 +13,36 @@ import java.util.List;
  * Repository for Message entity
  */
 @Repository
-public interface MessageRepository extends JpaRepository<Message, Long> {
+public interface MessageRepository extends MongoRepository<Message, String> {
     
     /**
      * Find all messages in a chat room, ordered by creation time
      */
-    Page<Message> findByChatRoomIdOrderByCreatedAtDesc(Long chatRoomId, Pageable pageable);
+    Page<Message> findByChatRoomIdOrderByCreatedAtDesc(String chatRoomId, Pageable pageable);
     
     /**
      * Find all messages in a chat room (without pagination)
      */
-    List<Message> findByChatRoomIdOrderByCreatedAtAsc(Long chatRoomId);
+    List<Message> findByChatRoomIdOrderByCreatedAtAsc(String chatRoomId);
     
     /**
      * Find messages by organization
      */
-    List<Message> findByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
+    List<Message> findByOrganizationIdOrderByCreatedAtDesc(String organizationId);
     
     /**
      * Find messages by sender
      */
-    List<Message> findBySenderIdAndOrganizationIdOrderByCreatedAtDesc(Long senderId, Long organizationId);
+    List<Message> findBySenderIdAndOrganizationIdOrderByCreatedAtDesc(String senderId, String organizationId);
     
     /**
      * Count unread messages for a user in a chat room
      */
-    @Query("SELECT COUNT(m) FROM Message m WHERE m.chatRoomId = :chatRoomId " +
-           "AND m.senderId != :userId AND m.status != 'READ'")
-    Long countUnreadMessages(@Param("chatRoomId") Long chatRoomId, @Param("userId") Long userId);
+    @Query("{ 'chatRoomId': ?0, 'senderId': { $ne: ?1 }, 'status': { $ne: 'READ' } }")
+    long countByChatRoomIdAndSenderIdNotAndStatusNot(String chatRoomId, String userId, Message.MessageStatus status);
+    
+    default Long countUnreadMessages(String chatRoomId, String userId) {
+        return countByChatRoomIdAndSenderIdNotAndStatusNot(chatRoomId, userId, Message.MessageStatus.READ);
+    }
 }
 

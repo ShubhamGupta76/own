@@ -30,7 +30,7 @@ public class ChannelManagementController {
     private final JwtUtil jwtUtil;
     
     
-    private Long getUserId(HttpServletRequest request) {
+    private String getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
@@ -40,7 +40,7 @@ public class ChannelManagementController {
         return jwtUtil.extractRole(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -58,19 +58,19 @@ public class ChannelManagementController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Create channel", description = "Creates a channel in a team. ADMIN and MANAGER have full access. EMPLOYEE can create only if they are a team member.")
     public ResponseEntity<ChannelResponse> createChannel(
-            @PathVariable Long teamId,
+            @PathVariable String teamId,
             @Valid @RequestBody CreateChannelRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
+            String userId = getUserId(httpRequest);
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
             if (role == null || role.trim().isEmpty()) {
                 throw new RuntimeException("Access denied: User role is missing from token. Please log out and log back in.");
             }
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Your account may not be associated with an organization yet, or you're using an old token. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -86,12 +86,12 @@ public class ChannelManagementController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get team channels", description = "Retrieves all channels under a team. All roles can view.")
     public ResponseEntity<List<ChannelResponse>> getChannelsByTeam(
-            @PathVariable Long teamId,
+            @PathVariable String teamId,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -107,20 +107,20 @@ public class ChannelManagementController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Add channel member", description = "Adds a user to a channel. ADMIN and MANAGER have full access. EMPLOYEE can add only if they are a team member.")
     public ResponseEntity<ChannelMemberResponse> addChannelMember(
-            @PathVariable Long channelId,
-            @RequestBody java.util.Map<String, Long> request,
+            @PathVariable String channelId,
+            @RequestBody java.util.Map<String, String> request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
+            String userId = getUserId(httpRequest);
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
-            Long memberUserId = request.get("userId");
+            String organizationId = getOrganizationId(httpRequest);
+            String memberUserId = request.get("userId");
             
-            if (memberUserId == null) {
+            if (memberUserId == null || memberUserId.isEmpty()) {
                 throw new RuntimeException("User ID is required");
             }
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -137,15 +137,15 @@ public class ChannelManagementController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Remove channel member", description = "Removes a user from a channel. ADMIN and MANAGER have full access. EMPLOYEE can remove only if they are a team member.")
     public ResponseEntity<Void> removeChannelMember(
-            @PathVariable Long channelId,
-            @PathVariable Long userId,
+            @PathVariable String channelId,
+            @PathVariable String userId,
             HttpServletRequest httpRequest) {
         try {
-            Long currentUserId = getUserId(httpRequest);
+            String currentUserId = getUserId(httpRequest);
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             
@@ -161,12 +161,12 @@ public class ChannelManagementController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Get channel members", description = "Retrieves all members of a channel. All roles can view.")
     public ResponseEntity<List<ChannelMemberResponse>> getChannelMembers(
-            @PathVariable Long channelId,
+            @PathVariable String channelId,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please log out and log back in to refresh your authentication token.");
             }
             

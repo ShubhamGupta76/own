@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -37,8 +36,7 @@ public class MeetingService {
      * Create an instant call
      * No scheduling required, starts immediately
      */
-    @Transactional
-    public MeetingResponse createInstantCall(InstantCallRequest request, Long createdBy, Long organizationId) {
+    public MeetingResponse createInstantCall(InstantCallRequest request, String createdBy, String organizationId) {
         // Check meeting policy
         validateMeetingPolicy(organizationId);
         
@@ -63,7 +61,7 @@ public class MeetingService {
         
         // Add other participants if provided
         if (request.getParticipantIds() != null && !request.getParticipantIds().isEmpty()) {
-            for (Long participantId : request.getParticipantIds()) {
+            for (String participantId : request.getParticipantIds()) {
                 try {
                     addParticipant(meeting.getId(), participantId, organizationId);
                 } catch (Exception e) {
@@ -76,7 +74,7 @@ public class MeetingService {
         broadcastMeetingEvent(meeting.getId(), "MEETING_CREATED", meeting);
         
         // Publish Kafka event for async notification processing
-        List<Long> participantIds = participantRepository.findByMeetingId(meeting.getId()).stream()
+        List<String> participantIds = participantRepository.findByMeetingId(meeting.getId()).stream()
                 .map(p -> p.getUserId())
                 .collect(java.util.stream.Collectors.toList());
         eventProducer.publishMeetingCreatedEvent(
@@ -94,8 +92,7 @@ public class MeetingService {
     /**
      * Schedule a meeting
      */
-    @Transactional
-    public MeetingResponse scheduleMeeting(ScheduleMeetingRequest request, Long createdBy, Long organizationId) {
+    public MeetingResponse scheduleMeeting(ScheduleMeetingRequest request, String createdBy, String organizationId) {
         // Check meeting policy
         validateMeetingPolicy(organizationId);
         
@@ -130,7 +127,7 @@ public class MeetingService {
         
         // Add other participants if provided
         if (request.getParticipantIds() != null && !request.getParticipantIds().isEmpty()) {
-            for (Long participantId : request.getParticipantIds()) {
+            for (String participantId : request.getParticipantIds()) {
                 try {
                     addParticipant(meeting.getId(), participantId, organizationId);
                 } catch (Exception e) {
@@ -148,8 +145,7 @@ public class MeetingService {
     /**
      * Join a meeting
      */
-    @Transactional
-    public MeetingParticipantResponse joinMeeting(Long meetingId, Long userId, Long organizationId) {
+    public MeetingParticipantResponse joinMeeting(String meetingId, String userId, String organizationId) {
         // Verify meeting exists and belongs to organization
         Meeting meeting = meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
@@ -205,8 +201,7 @@ public class MeetingService {
     /**
      * Leave a meeting
      */
-    @Transactional
-    public void leaveMeeting(Long meetingId, Long userId, Long organizationId) {
+    public void leaveMeeting(String meetingId, String userId, String organizationId) {
         // Verify meeting exists
         Meeting meeting = meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
@@ -244,8 +239,7 @@ public class MeetingService {
     /**
      * Start screen sharing
      */
-    @Transactional
-    public ScreenShareStateResponse startScreenShare(Long meetingId, Long userId, Long organizationId) {
+    public ScreenShareStateResponse startScreenShare(String meetingId, String userId, String organizationId) {
         // Verify meeting exists and is live
         Meeting meeting = meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
@@ -282,8 +276,7 @@ public class MeetingService {
     /**
      * Stop screen sharing
      */
-    @Transactional
-    public void stopScreenShare(Long meetingId, Long userId, Long organizationId) {
+    public void stopScreenShare(String meetingId, String userId, String organizationId) {
         // Verify meeting exists
         meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
@@ -310,8 +303,7 @@ public class MeetingService {
     /**
      * Start recording
      */
-    @Transactional
-    public RecordingStateResponse startRecording(Long meetingId, Long userId, Long organizationId) {
+    public RecordingStateResponse startRecording(String meetingId, String userId, String organizationId) {
         // Verify meeting exists and is live
         Meeting meeting = meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
@@ -351,8 +343,7 @@ public class MeetingService {
     /**
      * Stop recording
      */
-    @Transactional
-    public RecordingStateResponse stopRecording(Long meetingId, Long userId, Long organizationId, String recordingUrl) {
+    public RecordingStateResponse stopRecording(String meetingId, String userId, String organizationId, String recordingUrl) {
         // Verify meeting exists
         meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
@@ -385,8 +376,7 @@ public class MeetingService {
     /**
      * Add a note to a meeting
      */
-    @Transactional
-    public MeetingNoteResponse addNote(Long meetingId, MeetingNoteRequest request, Long userId, Long organizationId) {
+    public MeetingNoteResponse addNote(String meetingId, MeetingNoteRequest request, String userId, String organizationId) {
         // Verify meeting exists
         meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
@@ -407,8 +397,7 @@ public class MeetingService {
     /**
      * Get notes for a meeting
      */
-    @Transactional(readOnly = true)
-    public List<MeetingNoteResponse> getNotes(Long meetingId, Long organizationId) {
+    public List<MeetingNoteResponse> getNotes(String meetingId, String organizationId) {
         // Verify meeting exists
         meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
@@ -423,8 +412,7 @@ public class MeetingService {
     /**
      * Get meeting by ID
      */
-    @Transactional(readOnly = true)
-    public MeetingResponse getMeeting(Long meetingId, Long organizationId) {
+    public MeetingResponse getMeeting(String meetingId, String organizationId) {
         Meeting meeting = meetingRepository.findByIdAndOrganizationId(meetingId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
         
@@ -434,8 +422,7 @@ public class MeetingService {
     /**
      * Get all meetings for organization
      */
-    @Transactional(readOnly = true)
-    public List<MeetingResponse> getAllMeetings(Long organizationId) {
+    public List<MeetingResponse> getAllMeetings(String organizationId) {
         List<Meeting> meetings = meetingRepository.findByOrganizationId(organizationId);
         
         return meetings.stream()
@@ -446,7 +433,7 @@ public class MeetingService {
     /**
      * Helper: Add participant to meeting
      */
-    private MeetingParticipant addParticipant(Long meetingId, Long userId, Long organizationId) {
+    private MeetingParticipant addParticipant(String meetingId, String userId, String organizationId) {
         // Check if already a participant
         if (participantRepository.existsByMeetingIdAndUserId(meetingId, userId)) {
             throw new RuntimeException("User is already a participant");
@@ -465,7 +452,7 @@ public class MeetingService {
     /**
      * Helper: Validate meeting policy
      */
-    private void validateMeetingPolicy(Long organizationId) {
+    private void validateMeetingPolicy(String organizationId) {
         MeetingPolicy policy = policyRepository.findByOrganizationId(organizationId)
                 .orElse(MeetingPolicy.builder()
                         .organizationId(organizationId)
@@ -480,7 +467,7 @@ public class MeetingService {
     /**
      * Helper: Broadcast meeting event via WebSocket
      */
-    private void broadcastMeetingEvent(Long meetingId, String eventType, Meeting meeting) {
+    private void broadcastMeetingEvent(String meetingId, String eventType, Meeting meeting) {
         Map<String, Object> event = new HashMap<>();
         event.put("event", eventType);
         event.put("meeting", mapToMeetingResponse(meeting));

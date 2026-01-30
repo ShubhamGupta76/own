@@ -1,7 +1,7 @@
 package com.connect.Team.repository;
 
 import com.connect.Team.entity.Team;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -10,16 +10,16 @@ import java.util.List;
  * Repository for Team entity
  */
 @Repository
-public interface TeamRepository extends JpaRepository<Team, Long> {
+public interface TeamRepository extends MongoRepository<Team, String> {
     
     /**
      * Find all teams in an organization
      */
-    List<Team> findByOrganizationId(Long organizationId);
+    List<Team> findByOrganizationId(String organizationId);
     
     /**
      * Find active teams in an organization
      */
-    List<Team> findByOrganizationIdAndActiveTrue(Long organizationId);
+    List<Team> findByOrganizationIdAndActiveTrue(String organizationId);
 }
 

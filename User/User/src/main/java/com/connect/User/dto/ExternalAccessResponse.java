@@ -17,13 +17,13 @@ import java.util.List;
 @AllArgsConstructor
 public class ExternalAccessResponse {
     
-    private Long userId;
+    private String userId;
     private String email;
     private String firstName;
     private String lastName;
-    private Long organizationId;
-    private List<Long> teamIds;
-    private List<Long> channelIds;
+    private String organizationId;
+    private List<String> teamIds;
+    private List<String> channelIds;
     private LocalDateTime grantedAt;
     private LocalDateTime expiresAt;
 }

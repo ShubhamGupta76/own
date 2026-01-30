@@ -33,7 +33,7 @@ public class ChatController {
     /**
      * Extract user information from JWT token
      */
-    private Long getUserId(HttpServletRequest request) {
+    private String getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
@@ -43,7 +43,7 @@ public class ChatController {
         return jwtUtil.extractRole(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -57,10 +57,10 @@ public class ChatController {
     }
     
     /**
-     * Validate that userId is not null and is positive
+     * Validate that userId is not null and is not empty
      */
-    private void validateUserId(Long userId) {
-        if (userId == null || userId <= 0) {
+    private void validateUserId(String userId) {
+        if (userId == null || userId.isEmpty()) {
             throw new RuntimeException("Invalid user ID: " + userId);
         }
     }
@@ -76,11 +76,11 @@ public class ChatController {
             @Valid @RequestBody SendMessageRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
+            String userId = getUserId(httpRequest);
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -99,14 +99,14 @@ public class ChatController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Get channel messages", description = "Retrieves messages for a channel. Supports pagination.")
     public ResponseEntity<List<MessageResponse>> getChannelMessages(
-            @PathVariable Long channelId,
+            @PathVariable String channelId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             HttpServletRequest httpRequest) {
         try {
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -125,15 +125,15 @@ public class ChatController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Get user messages", description = "Retrieves messages from direct chat with a user. Supports pagination.")
     public ResponseEntity<List<MessageResponse>> getUserMessages(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             HttpServletRequest httpRequest) {
         try {
-            Long currentUserId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String currentUserId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -152,7 +152,7 @@ public class ChatController {
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     @Operation(summary = "Get direct chat messages", description = "Retrieves messages from direct 1-to-1 chat with a user. Supports pagination.")
     public ResponseEntity<List<MessageResponse>> getDirectMessages(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             HttpServletRequest httpRequest) {
@@ -160,14 +160,14 @@ public class ChatController {
             // Validate userId parameter
             validateUserId(userId);
             
-            Long currentUserId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String currentUserId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (currentUserId == null || currentUserId <= 0) {
+            if (currentUserId == null || currentUserId.isEmpty()) {
                 throw new RuntimeException("Invalid current user ID");
             }
             
-            if (organizationId == null || organizationId <= 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found in token");
             }
             

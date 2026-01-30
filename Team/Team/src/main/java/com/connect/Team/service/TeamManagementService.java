@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
@@ -31,8 +30,7 @@ public class TeamManagementService {
     @Value("${channel.service.url:http://localhost:8104}")
     private String channelServiceUrl;
     
-    @Transactional
-    public TeamResponse createTeam(CreateTeamRequest request, Long createdBy, Long organizationId, String role, String authToken) {
+    public TeamResponse createTeam(CreateTeamRequest request, String createdBy, String organizationId, String role, String authToken) {
         if (role == null || role.trim().isEmpty()) {
             log.error("Role is null or empty when creating team. UserId: {}, OrganizationId: {}", createdBy, organizationId);
             throw new RuntimeException("User role is missing");
@@ -73,8 +71,7 @@ public class TeamManagementService {
         return mapToTeamResponse(team);
     }
     
-    @Transactional
-    public TeamMemberResponse addTeamMember(Long teamId, AddTeamMemberRequest request, Long organizationId, String role) {
+    public TeamMemberResponse addTeamMember(String teamId, AddTeamMemberRequest request, String organizationId, String role) {
         if (!role.equals("ADMIN") && !role.equals("MANAGER")) {
             throw new RuntimeException("Only ADMIN and MANAGER can add team members");
         }
@@ -109,8 +106,7 @@ public class TeamManagementService {
         return mapToMemberResponse(member);
     }
     
-    @Transactional
-    public void removeTeamMember(Long teamId, Long userId, Long organizationId, String role) {
+    public void removeTeamMember(String teamId, String userId, String organizationId, String role) {
         if (!role.equals("ADMIN") && !role.equals("MANAGER")) {
             throw new RuntimeException("Only ADMIN and MANAGER can remove team members");
         }
@@ -132,8 +128,7 @@ public class TeamManagementService {
         teamMemberRepository.delete(member);
     }
     
-    @Transactional(readOnly = true)
-    public List<TeamResponse> getAllTeams(Long organizationId) {
+    public List<TeamResponse> getAllTeams(String organizationId) {
         List<Team> teams = teamRepository.findByOrganizationIdAndActiveTrue(organizationId);
         
         return teams.stream()
@@ -141,8 +136,7 @@ public class TeamManagementService {
                 .collect(Collectors.toList());
     }
     
-    @Transactional(readOnly = true)
-    public List<TeamResponse> getMyTeams(Long userId, Long organizationId) {
+    public List<TeamResponse> getMyTeams(String userId, String organizationId) {
         List<TeamMember> memberships = teamMemberRepository.findByUserId(userId);
         
         return memberships.stream()
@@ -155,18 +149,16 @@ public class TeamManagementService {
                 .collect(Collectors.toList());
     }
     
-    @Transactional(readOnly = true)
-    public boolean isTeamMember(Long teamId, Long userId) {
+    public boolean isTeamMember(String teamId, String userId) {
         return teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
     }
     
-    @Transactional(readOnly = true)
-    public Team getTeamById(Long teamId) {
+    public Team getTeamById(String teamId) {
         return teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
     }
     
-    private void createGeneralChannel(Long teamId, Long organizationId, String authToken) {
+    private void createGeneralChannel(String teamId, String organizationId, String authToken) {
         try {
             java.util.Map<String, Object> channelRequest = new java.util.HashMap<>();
             channelRequest.put("name", "General");

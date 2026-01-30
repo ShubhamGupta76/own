@@ -23,7 +23,7 @@ public class SearchService {
      * This is a simplified implementation - in production, integrate with actual services
      */
     @Transactional(readOnly = true)
-    public List<SearchResult> search(Long organizationId, String query, String type) {
+    public List<SearchResult> search(String organizationId, String query, String type) {
         List<SearchResult> results = new ArrayList<>();
         
         // Placeholder implementation

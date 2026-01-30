@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TeamMemberResponse {
     
-    private Long id;
-    private Long userId;
-    private Long teamId;
+    private String id;
+    private String userId;
+    private String teamId;
     private String role;
     private LocalDateTime joinedAt;
 }

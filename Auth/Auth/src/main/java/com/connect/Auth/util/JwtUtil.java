@@ -24,13 +24,13 @@ public class JwtUtil {
     private Long expiration;
     
    
-    public String generateToken(Long userId, String email, String role, Long organizationId) {
+    public String generateToken(String userId, String email, String role, String organizationId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("email", email);
         claims.put("role", role);
         
-        if (organizationId != null) {
+        if (organizationId != null && !organizationId.isEmpty()) {
             claims.put("organizationId", organizationId);
         }
         
@@ -68,12 +68,11 @@ public class JwtUtil {
     }
     
     
-    public Long extractUserId(String token) {
+    public String extractUserId(String token) {
         return extractClaim(token, claims -> {
             Object userId = claims.get("userId");
             if (userId == null) return null;
-            if (userId instanceof Integer) return ((Integer) userId).longValue();
-            return (Long) userId;
+            return userId.toString();
         });
     }
     
@@ -88,12 +87,11 @@ public class JwtUtil {
     }
     
     
-    public Long extractOrganizationId(String token) {
+    public String extractOrganizationId(String token) {
         return extractClaim(token, claims -> {
             Object orgId = claims.get("organizationId");
             if (orgId == null) return null;
-            if (orgId instanceof Integer) return ((Integer) orgId).longValue();
-            return (Long) orgId;
+            return orgId.toString();
         });
     }
     

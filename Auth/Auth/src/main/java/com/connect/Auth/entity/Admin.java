@@ -1,16 +1,18 @@
 package com.connect.Auth.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
-
-@Entity
-@Table(name = "admins")
+@Document(collection = "admins")
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,47 +20,29 @@ import java.time.LocalDateTime;
 public class Admin {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(nullable = false, unique = true)
+    @Indexed(unique = true)
     private String email;
     
-    @Column(nullable = false)
     private String password;
     
-    @Column(nullable = false)
     private String firstName;
     
-    @Column(nullable = false)
     private String lastName;
     
-    @Column(name = "organization_id")
-    private Long organizationId; 
+    @Indexed
+    private String organizationId; 
     
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private Role role = Role.ADMIN; 
     
-    @Column(nullable = false)
     private Boolean active = true;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
     
     public enum Role {
         ADMIN

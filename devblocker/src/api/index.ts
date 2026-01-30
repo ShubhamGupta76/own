@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 import type { AxiosInstance, AxiosError } from 'axios';
-import { API_CONFIG, getToken, removeToken, decodeJWT } from '../config/api';
+import { API_CONFIG, getToken, removeToken, decodeJWT, isTokenExpired } from '../config/api';
 import type { ApiError } from '../types/api';
 
 /**
@@ -48,9 +48,24 @@ apiClient.interceptors.response.use(
     
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      removeToken();
-      if (currentPath !== '/login' && currentPath !== '/register') {
-        window.location.href = '/login';
+      const token = getToken();
+      const decoded = token ? decodeJWT(token) : null;
+      
+      // Only redirect if token is actually missing or expired
+      // Don't redirect if token exists and is valid - might be a backend validation issue
+      if (!token || (decoded && isTokenExpired(token))) {
+        console.warn('Token missing or expired, redirecting to login');
+        removeToken();
+        if (currentPath !== '/login' && currentPath !== '/register') {
+          // Use a small delay to avoid race conditions
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 100);
+        }
+      } else {
+        // Token exists and is not expired, but backend rejected it
+        // Log the error but don't redirect - let the component handle it
+        console.warn('401 Unauthorized - Token exists but backend rejected request:', error.config?.url);
       }
       return Promise.reject(error);
     }

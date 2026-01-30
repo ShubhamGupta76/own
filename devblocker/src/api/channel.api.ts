@@ -11,7 +11,7 @@ export const channelsApi = {
   /**
    * Get channels for a team
    */
-  getChannelsByTeam: async (teamId: number): Promise<Channel[]> => {
+  getChannelsByTeam: async (teamId: string): Promise<Channel[]> => {
     const response = await apiClient.get<Channel[]>(
       API_CONFIG.ENDPOINTS.CHANNELS.BY_TEAM(teamId)
     );
@@ -22,7 +22,7 @@ export const channelsApi = {
    * Create channel in team
    */
   createChannel: async (
-    teamId: number,
+    teamId: string,
     channel: { name: string; description?: string }
   ): Promise<Channel> => {
     const response = await apiClient.post<Channel>(
@@ -35,14 +35,14 @@ export const channelsApi = {
   /**
    * Add member to channel
    */
-  addMember: async (channelId: number, userId: number): Promise<void> => {
+  addMember: async (channelId: string, userId: string): Promise<void> => {
     await apiClient.post(API_CONFIG.ENDPOINTS.CHANNELS.ADD_MEMBER(channelId), { userId });
   },
 
   /**
    * Remove member from channel
    */
-  removeMember: async (channelId: number, userId: number): Promise<void> => {
+  removeMember: async (channelId: string, userId: string): Promise<void> => {
     await apiClient.delete(API_CONFIG.ENDPOINTS.CHANNELS.REMOVE_MEMBER(channelId, userId));
   },
 };

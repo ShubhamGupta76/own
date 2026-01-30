@@ -33,12 +33,12 @@ public class PolicyController {
     /**
      * Extract admin ID and organization ID from JWT token
      */
-    private Long getAdminId(HttpServletRequest request) {
+    private String getAdminId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -63,10 +63,10 @@ public class PolicyController {
     @Operation(summary = "Get all policies", description = "Retrieves all policies (CHAT, MEETING, FILE_SHARING) for the admin's organization.")
     public ResponseEntity<List<Policy>> getPolicies(HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String adminId = getAdminId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found. Please create an organization first.");
             }
             
@@ -88,10 +88,10 @@ public class PolicyController {
             @PathVariable String policyType,
             HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String adminId = getAdminId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found. Please create an organization first.");
             }
             
@@ -121,10 +121,10 @@ public class PolicyController {
             @Valid @RequestBody PolicyRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long adminId = getAdminId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String adminId = getAdminId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found. Please create an organization first.");
             }
             

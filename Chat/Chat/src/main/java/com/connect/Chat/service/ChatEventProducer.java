@@ -24,9 +24,9 @@ public class ChatEventProducer {
     /**
      * Publish MESSAGE_SENT event
      */
-    public void publishMessageSentEvent(Long messageId, Long channelId, Long chatRoomId, 
-                                       Long senderId, String senderRole, 
-                                       List<Long> mentionedUserIds, Long organizationId, 
+    public void publishMessageSentEvent(String messageId, String channelId, String chatRoomId, 
+                                       String senderId, String senderRole, 
+                                       List<String> mentionedUserIds, String organizationId, 
                                        String messageContent) {
         // Skip Kafka publishing if template is not available (Kafka might be down)
         if (kafkaTemplate == null) {
@@ -51,7 +51,7 @@ public class ChatEventProducer {
             // Use organizationId as partition key for better distribution
             // Send asynchronously to avoid blocking if Kafka is unavailable
             // Use exceptionally() to handle errors immediately without blocking
-            kafkaTemplate.send(CHAT_EVENTS_TOPIC, organizationId.toString(), event)
+            kafkaTemplate.send(CHAT_EVENTS_TOPIC, organizationId, event)
                     .exceptionally(ex -> {
                         log.warn("Failed to publish MESSAGE_SENT event for messageId: {}, organizationId: {} - {}", 
                                 messageId, organizationId, ex.getMessage());

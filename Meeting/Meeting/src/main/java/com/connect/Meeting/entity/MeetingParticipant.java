@@ -1,10 +1,14 @@
 package com.connect.Meeting.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 
 import java.time.LocalDateTime;
 
@@ -12,10 +16,8 @@ import java.time.LocalDateTime;
  * Meeting Participant entity
  * Tracks who joined/left meetings
  */
-@Entity
-@Table(name = "meeting_participants", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"meeting_id", "user_id"})
-})
+@Document(collection = "meeting_participants")
+@CompoundIndex(name = "meeting_user_idx", def = "{'meetingId': 1, 'userId': 1}", unique = true)
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,33 +25,23 @@ import java.time.LocalDateTime;
 public class MeetingParticipant {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "meeting_id", nullable = false)
-    private Long meetingId;
+    @Indexed
+    private String meetingId;
     
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Indexed
+    private String userId;
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
-    @Column(name = "joined_at")
+    @CreatedDate
     private LocalDateTime joinedAt;
     
-    @Column(name = "left_at")
     private LocalDateTime leftAt;
     
-    @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
-    
-    @PrePersist
-    protected void onCreate() {
-        if (joinedAt == null) {
-            joinedAt = LocalDateTime.now();
-        }
-    }
 }
 

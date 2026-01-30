@@ -103,8 +103,8 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
             }
             
-            Long adminId = Long.valueOf(request.get("adminId").toString());
-            Long organizationId = Long.valueOf(request.get("organizationId").toString());
+            String adminId = request.get("adminId").toString();
+            String organizationId = request.get("organizationId").toString();
             
             AuthResponse response = authService.updateOrganizationIdAndGetToken(adminId, organizationId);
             
@@ -116,9 +116,9 @@ public class AuthController {
             }
             
             return ResponseEntity.ok(response);
-        } catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
             AuthResponse errorResponse = AuthResponse.builder()
-                    .message("Invalid adminId or organizationId format. Both must be valid numbers.")
+                    .message("Invalid adminId or organizationId format: " + e.getMessage())
                     .build();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (RuntimeException e) {

@@ -16,15 +16,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MessageResponse {
     
-    private Long id;
-    private Long chatRoomId;
-    private Long senderId;
+    private String id;
+    private String chatRoomId;
+    private String senderId;
     private String senderRole;
-    private Long organizationId;
+    private String organizationId;
     private String content;
     private String messageType;
     private String fileUrl;
-    private Long fileId;
+    private String fileId;
     private String linkUrl;
     private String emojiCode;
     private String gifUrl;

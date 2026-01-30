@@ -11,7 +11,7 @@ import { HiUser, HiUserGroup, HiShieldCheck, HiChat } from 'react-icons/hi';
 
 interface ChatSidebarProps {
   onSelectUser: (user: User) => void;
-  selectedUserId?: number;
+  selectedUserId?: string;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onSelectUser, selectedUserId }) => {

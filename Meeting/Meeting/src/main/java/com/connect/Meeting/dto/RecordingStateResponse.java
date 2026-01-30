@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class RecordingStateResponse {
     
-    private Long id;
-    private Long meetingId;
-    private Long recordedBy;
+    private String id;
+    private String meetingId;
+    private String recordedBy;
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
     private String recordingUrl;

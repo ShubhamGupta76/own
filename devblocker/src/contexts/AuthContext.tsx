@@ -34,23 +34,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshUser = useCallback(async (): Promise<void> => {
     const storedToken = getToken();
     if (!storedToken) {
+      console.log('refreshUser: No token found');
       return;
     }
 
     const decoded = decodeJWT(storedToken);
     if (!decoded) {
+      console.log('refreshUser: Failed to decode token');
       return;
     }
 
-    // Extract organizationId from JWT (can be number or null)
-    const orgId = decoded.organizationId != null ? 
-      (typeof decoded.organizationId === 'number' ? decoded.organizationId : Number(decoded.organizationId)) : 
-      null;
+    console.log('refreshUser: Decoded token', { userId: decoded.userId, email: decoded.email, role: decoded.role, organizationId: decoded.organizationId });
+
+    // Extract organizationId from JWT (now string)
+    const orgId = decoded.organizationId != null ? String(decoded.organizationId) : null;
 
     // For ADMIN role, try to fetch full profile from User Service
     // BUT always use email from token to ensure correct user is displayed
-    if (decoded.role === 'ADMIN' && decoded.userId && orgId && orgId > 0) {
+    if (decoded.role === 'ADMIN' && decoded.userId && orgId && orgId.length > 0) {
       try {
+        console.log('refreshUser: Attempting to fetch admin profile from User service', { userId: decoded.userId, organizationId: orgId });
         const userProfile = await userApi.getUserById(decoded.userId);
         // CRITICAL: Always use email from token to ensure correct user is displayed
         // This prevents showing wrong user when multiple admins exist
@@ -58,6 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ...userProfile,
           email: decoded.email, // Override with email from token
         };
+        console.log('refreshUser: Admin profile fetched from User service', userWithCorrectEmail);
         setUser(userWithCorrectEmail);
         return;
       } catch (error: any) {
@@ -67,11 +71,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (status === 404 || 
             status === 400 && (errorMessage.toLowerCase().includes('not found') || 
                                errorMessage.toLowerCase().includes('does not exist'))) {
-          console.debug('User not found in User service, using token data');
+          console.debug('refreshUser: User not found in User service, using token data');
         } else if (status === 403) {
-          console.debug('Access denied to user profile, using token data');
+          console.debug('refreshUser: Access denied to user profile, using token data');
         } else {
-          console.warn('Could not fetch user profile, using token data:', status || errorMessage);
+          console.warn('refreshUser: Could not fetch user profile, using token data:', status || errorMessage);
         }
       }
     }
@@ -79,13 +83,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // For all roles, create user object from JWT claims
     // Always use email from token to ensure correct user is displayed
     const basicUser: User = {
-      id: decoded.userId,
+      id: String(decoded.userId),
       email: decoded.email, // Always use email from token
       role: decoded.role,
-      organizationId: orgId || 0, // Use extracted orgId or default to 0
+      organizationId: orgId || '', // Use extracted orgId or default to empty string
       status: 'ACTIVE' as const,
       createdAt: new Date().toISOString(),
     };
+    console.log('refreshUser: Created basic user from token', basicUser);
     setUser(basicUser);
   }, []);
 
@@ -126,7 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         firstName: data.firstName,
         lastName: data.lastName,
         role: response.role,
-        organizationId: response.organizationId || 0,
+        organizationId: response.organizationId || '',
         status: 'ACTIVE' as const,
         createdAt: new Date().toISOString(),
       };
@@ -245,7 +250,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     switch (userRole) {
       case 'ADMIN':
-        return '/app/teams';
+        return '/app/admin/dashboard';
       case 'MANAGER':
       case 'EMPLOYEE':
         return '/app/teams';

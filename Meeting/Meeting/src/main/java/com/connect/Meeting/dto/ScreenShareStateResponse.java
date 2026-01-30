@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ScreenShareStateResponse {
     
-    private Long id;
-    private Long meetingId;
-    private Long startedBy;
+    private String id;
+    private String meetingId;
+    private String startedBy;
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
     private Boolean isActive;

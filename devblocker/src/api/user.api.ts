@@ -28,7 +28,7 @@ export const userApi = {
   /**
    * Get user by ID (Admin only)
    */
-  getUserById: async (userId: number): Promise<User> => {
+  getUserById: async (userId: string): Promise<User> => {
     const response = await apiClient.get<User>(API_CONFIG.ENDPOINTS.USER.USER_BY_ID(userId));
     return response.data;
   },
@@ -58,7 +58,7 @@ export const userApi = {
   /**
    * Reset user password (Admin only)
    */
-  resetPassword: async (userId: number, newPassword: string): Promise<User> => {
+  resetPassword: async (userId: string, newPassword: string): Promise<User> => {
     const response = await apiClient.put<User>(
       `${API_CONFIG.ENDPOINTS.USER.USERS}/${userId}/password`,
       { password: newPassword }

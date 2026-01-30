@@ -33,12 +33,12 @@ public class NotificationController {
     /**
      * Extract user information from JWT token
      */
-    private Long getUserId(HttpServletRequest request) {
+    private String getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -60,10 +60,10 @@ public class NotificationController {
     @Operation(summary = "Get notifications", description = "Retrieves all notifications for the logged-in user.")
     public ResponseEntity<List<NotificationResponse>> getNotifications(HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
@@ -83,10 +83,10 @@ public class NotificationController {
     @Operation(summary = "Get unread notifications", description = "Retrieves unread notifications for the logged-in user.")
     public ResponseEntity<List<NotificationResponse>> getUnreadNotifications(HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
@@ -106,14 +106,14 @@ public class NotificationController {
     @Operation(summary = "Get unread count", description = "Returns the count of unread notifications.")
     public ResponseEntity<Map<String, Long>> getUnreadCount(HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
-            Long count = notificationService.getUnreadCount(userId, organizationId);
+            long count = notificationService.getUnreadCount(userId, organizationId);
             return ResponseEntity.ok(Map.of("count", count));
         } catch (RuntimeException e) {
             throw new RuntimeException(e.getMessage());
@@ -128,13 +128,13 @@ public class NotificationController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     @Operation(summary = "Mark notification as read", description = "Marks a notification as read.")
     public ResponseEntity<NotificationResponse> markAsRead(
-            @PathVariable Long id,
+            @PathVariable String id,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
@@ -154,10 +154,10 @@ public class NotificationController {
     @Operation(summary = "Mark all as read", description = "Marks all notifications as read for the logged-in user.")
     public ResponseEntity<Void> markAllAsRead(HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
@@ -179,10 +179,10 @@ public class NotificationController {
             @RequestParam(defaultValue = "50") int limit,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null || organizationId == 0) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Access denied: Organization context is missing. Please ensure your account is associated with an organization. If you just registered, try logging out and logging back in.");
             }
             
@@ -201,8 +201,8 @@ public class NotificationController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get notification configs", description = "Retrieves notification type configurations.")
     public ResponseEntity<List<NotificationConfig>> getNotificationConfigs(HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         return ResponseEntity.ok(notificationService.getNotificationConfigs(organizationId));
@@ -219,8 +219,8 @@ public class NotificationController {
             @PathVariable String type,
             @RequestBody Map<String, Boolean> request,
             HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
-        if (organizationId == null) {
+        String organizationId = getOrganizationId(httpRequest);
+        if (organizationId == null || organizationId.isEmpty()) {
             throw new RuntimeException("Organization not found");
         }
         

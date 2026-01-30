@@ -18,16 +18,16 @@ import java.time.LocalDateTime;
 public class TaskEvent {
     
     private String eventType; // TASK_ASSIGNED, TASK_STATUS_CHANGED, TASK_COMMENTED
-    private Long taskId;
+    private String taskId;
     private String taskTitle;
-    private Long assignedTo; // For TASK_ASSIGNED
-    private Long assignedBy; // For TASK_ASSIGNED
+    private String assignedTo; // For TASK_ASSIGNED
+    private String assignedBy; // For TASK_ASSIGNED
     private String oldStatus; // For TASK_STATUS_CHANGED
     private String newStatus; // For TASK_STATUS_CHANGED
-    private Long commentedBy; // For TASK_COMMENTED
-    private Long organizationId;
-    private Long channelId;
-    private Long teamId;
+    private String commentedBy; // For TASK_COMMENTED
+    private String organizationId;
+    private String channelId;
+    private String teamId;
     private LocalDateTime timestamp;
 }
 

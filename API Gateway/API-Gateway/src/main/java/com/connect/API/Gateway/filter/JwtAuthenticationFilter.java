@@ -80,13 +80,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
        
         try {
-            Long userId = jwtUtil.extractUserId(token);
+            String userId = jwtUtil.extractUserId(token);
             String email = jwtUtil.extractEmail(token);
             String role = jwtUtil.extractRole(token);
-            Long organizationId = jwtUtil.extractOrganizationId(token);
+            String organizationId = jwtUtil.extractOrganizationId(token);
 
             
-            if (userId == null) {
+            if (userId == null || userId.isEmpty()) {
                 log.warn("JWT token missing userId claim");
                 return onError(exchange, "Invalid token: missing user information", HttpStatus.UNAUTHORIZED);
             }
@@ -103,17 +103,17 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             // ADMIN users may not have organizationId initially (before creating organization)
             // But most service endpoints require organizationId, so they'll get appropriate errors from services
             if (("EMPLOYEE".equalsIgnoreCase(role) || "MANAGER".equalsIgnoreCase(role)) && 
-                (organizationId == null || organizationId == 0)) {
+                (organizationId == null || organizationId.isEmpty())) {
                 log.warn("JWT token missing organizationId for role: {}", role);
                 return onError(exchange, "Invalid token: missing organization context for " + role + " role", HttpStatus.FORBIDDEN);
             }
 
-           
-            exchange.getAttributes().put("X-User-Id", userId.toString());
+            
+            exchange.getAttributes().put("X-User-Id", userId);
             exchange.getAttributes().put("X-User-Email", email);
             exchange.getAttributes().put("X-User-Role", role);
-            if (organizationId != null) {
-                exchange.getAttributes().put("X-Organization-Id", organizationId.toString());
+            if (organizationId != null && !organizationId.isEmpty()) {
+                exchange.getAttributes().put("X-Organization-Id", organizationId);
             }
 
            
@@ -122,11 +122,11 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 public HttpHeaders getHeaders() {
                     HttpHeaders headers = new HttpHeaders();
                     headers.putAll(super.getHeaders());
-                    headers.set("X-User-Id", userId.toString());
+                    headers.set("X-User-Id", userId);
                     headers.set("X-User-Email", email);
                     headers.set("X-User-Role", role);
-                    if (organizationId != null) {
-                        headers.set("X-Organization-Id", organizationId.toString());
+                    if (organizationId != null && !organizationId.isEmpty()) {
+                        headers.set("X-Organization-Id", organizationId);
                     }
                     return headers;
                 }

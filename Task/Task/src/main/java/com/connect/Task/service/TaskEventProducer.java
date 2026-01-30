@@ -23,9 +23,9 @@ public class TaskEventProducer {
     /**
      * Publish TASK_ASSIGNED event
      */
-    public void publishTaskAssignedEvent(Long taskId, String taskTitle, Long assignedTo,
-                                       Long assignedBy, Long organizationId,
-                                       Long channelId, Long teamId) {
+    public void publishTaskAssignedEvent(String taskId, String taskTitle, String assignedTo,
+                                       String assignedBy, String organizationId,
+                                       String channelId, String teamId) {
         try {
             TaskEvent event = TaskEvent.builder()
                     .eventType("TASK_ASSIGNED")
@@ -39,7 +39,7 @@ public class TaskEventProducer {
                     .timestamp(LocalDateTime.now())
                     .build();
             
-            kafkaTemplate.send(TASK_EVENTS_TOPIC, organizationId.toString(), event);
+            kafkaTemplate.send(TASK_EVENTS_TOPIC, organizationId, event);
             log.info("Published TASK_ASSIGNED event for taskId: {}, assignedTo: {}", taskId, assignedTo);
         } catch (Exception e) {
             log.error("Failed to publish TASK_ASSIGNED event: {}", e.getMessage(), e);
@@ -49,9 +49,9 @@ public class TaskEventProducer {
     /**
      * Publish TASK_STATUS_CHANGED event
      */
-    public void publishTaskStatusChangedEvent(Long taskId, String taskTitle,
+    public void publishTaskStatusChangedEvent(String taskId, String taskTitle,
                                              String oldStatus, String newStatus,
-                                             Long organizationId, Long channelId, Long teamId) {
+                                             String organizationId, String channelId, String teamId) {
         try {
             TaskEvent event = TaskEvent.builder()
                     .eventType("TASK_STATUS_CHANGED")
@@ -65,7 +65,7 @@ public class TaskEventProducer {
                     .timestamp(LocalDateTime.now())
                     .build();
             
-            kafkaTemplate.send(TASK_EVENTS_TOPIC, organizationId.toString(), event);
+            kafkaTemplate.send(TASK_EVENTS_TOPIC, organizationId, event);
             log.info("Published TASK_STATUS_CHANGED event for taskId: {}, status: {} -> {}", taskId, oldStatus, newStatus);
         } catch (Exception e) {
             log.error("Failed to publish TASK_STATUS_CHANGED event: {}", e.getMessage(), e);
@@ -75,8 +75,8 @@ public class TaskEventProducer {
     /**
      * Publish TASK_COMMENTED event
      */
-    public void publishTaskCommentedEvent(Long taskId, String taskTitle, Long commentedBy,
-                                         Long organizationId, Long channelId, Long teamId) {
+    public void publishTaskCommentedEvent(String taskId, String taskTitle, String commentedBy,
+                                         String organizationId, String channelId, String teamId) {
         try {
             TaskEvent event = TaskEvent.builder()
                     .eventType("TASK_COMMENTED")
@@ -89,7 +89,7 @@ public class TaskEventProducer {
                     .timestamp(LocalDateTime.now())
                     .build();
             
-            kafkaTemplate.send(TASK_EVENTS_TOPIC, organizationId.toString(), event);
+            kafkaTemplate.send(TASK_EVENTS_TOPIC, organizationId, event);
             log.info("Published TASK_COMMENTED event for taskId: {}, commentedBy: {}", taskId, commentedBy);
         } catch (Exception e) {
             log.error("Failed to publish TASK_COMMENTED event: {}", e.getMessage(), e);

@@ -14,7 +14,7 @@ spring:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
-              - "${FRONTEND_URL:http://localhost:5173}"
+              - "${FRONTEND_URL:https://devblocker-frontend.onrender.com}"
             allowedMethods:
               - GET
               - POST
@@ -28,18 +28,18 @@ spring:
       routes:
        
         - id: notification-websocket
-          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8108}
+          uri: ${NOTIFICATION_SERVICE_URL:http://notification-service.onrender.com}
           predicates:
             - Path=/ws/notifications/**
         
         - id: chat-websocket
-          uri: ${CHAT_SERVICE_URL:http://localhost:8105}
+          uri: ${CHAT_SERVICE_URL:http://chat-service.onrender.com}
           predicates:
             - Path=/ws/chat/**
         
         
         - id: auth-service
-          uri: ${AUTH_SERVICE_URL:http://localhost:8101}
+          uri: ${AUTH_SERVICE_URL:http://auth-service.onrender.com}
           predicates:
             - Path=/auth/**
           filters:
@@ -47,28 +47,28 @@ spring:
         
         
         - id: user-service
-          uri: ${USER_SERVICE_URL:http://localhost:8102}
+          uri: ${USER_SERVICE_URL:http://user-service.onrender.com}
           predicates:
             - Path=/users/**
           filters:
             - RewritePath=/users/?(?<segment>.*), /api/v1/users/$\{segment}
         
         - id: employee-service
-          uri: ${USER_SERVICE_URL:http://localhost:8102}
+          uri: ${USER_SERVICE_URL:http://user-service.onrender.com}
           predicates:
             - Path=/employees/**
           filters:
             - RewritePath=/employees/?(?<segment>.*), /api/v1/employees/$\{segment}
         
         - id: organization-service
-          uri: ${USER_SERVICE_URL:http://localhost:8102}
+          uri: ${USER_SERVICE_URL:http://user-service.onrender.com}
           predicates:
             - Path=/organizations/**
           filters:
             - RewritePath=/organizations/?(?<segment>.*), /api/v1/organizations/$\{segment}
         
         - id: team-service
-          uri: ${TEAM_SERVICE_URL:http://localhost:8103}
+          uri: ${TEAM_SERVICE_URL:http://team-service.onrender.com}
           predicates:
             - Path=/teams/**
           filters:
@@ -76,7 +76,7 @@ spring:
         
         # Channel service - team channels route (must come before general channels route)
         - id: channel-service-team-channels
-          uri: ${CHANNEL_SERVICE_URL:http://localhost:8104}
+          uri: ${CHANNEL_SERVICE_URL:http://channel-service.onrender.com}
           predicates:
             - Path=/channels/teams/**
           filters:
@@ -84,7 +84,7 @@ spring:
         
         # Channel service - general routes
         - id: channel-service
-          uri: ${CHANNEL_SERVICE_URL:http://localhost:8104}
+          uri: ${CHANNEL_SERVICE_URL:http://channel-service.onrender.com}
           predicates:
             - Path=/channels/**
           filters:
@@ -92,7 +92,7 @@ spring:
         
         
         - id: chat-service
-          uri: ${CHAT_SERVICE_URL:http://localhost:8105}
+          uri: ${CHAT_SERVICE_URL:http://chat-service.onrender.com}
           predicates:
             - Path=/chat/**
           filters:
@@ -100,22 +100,22 @@ spring:
         
         
         - id: meeting-service
-          uri: ${MEETING_SERVICE_URL:http://localhost:8106}
+          uri: ${MEETING_SERVICE_URL:http://meeting-service.onrender.com}
           predicates:
             - Path=/meetings/**
           filters:
             - RewritePath=/meetings/?(?<segment>.*), /api/v1/meetings/$\{segment}
     
         - id: file-service
-          uri: ${FILE_SERVICE_URL:http://localhost:8107}
+          uri: ${FILE_SERVICE_URL:http://file-service.onrender.com}
           predicates:
             - Path=/files/**
           filters:
             - RewritePath=/files/?(?<segment>.*), /api/v1/files/$\{segment}
         
-       
+        
         - id: notification-service
-          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8108}
+          uri: ${NOTIFICATION_SERVICE_URL:http://notification-service.onrender.com}
           predicates:
             - Path=/notifications/**
           filters:
@@ -123,18 +123,11 @@ spring:
         
         
         - id: task-service
-          uri: ${TASK_SERVICE_URL:http://localhost:8110}
+          uri: ${TASK_SERVICE_URL:http://task-service.onrender.com}
           predicates:
             - Path=/tasks/**
           filters:
             - RewritePath=/tasks/?(?<segment>.*), /api/v1/tasks/$\{segment}
-        
-        - id: search-service
-          uri: ${SEARCH_SERVICE_URL:http://localhost:8109}
-          predicates:
-            - Path=/search/**
-          filters:
-            - RewritePath=/search/?(?<segment>.*), /api/v1/search/$\{segment}
 
 
 jwt:
@@ -162,9 +155,9 @@ management:
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
-    org.springframework.cloud.gateway: ${LOG_LEVEL:DEBUG}
-    org.springframework.security: ${LOG_LEVEL:DEBUG}
-    com.connect.API.Gateway: ${LOG_LEVEL:DEBUG}
+    org.springframework.cloud.gateway: ${LOG_LEVEL:INFO}
+    org.springframework.security: ${LOG_LEVEL:INFO}
+    com.connect.API.Gateway: ${LOG_LEVEL:INFO}
     reactor.netty: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"

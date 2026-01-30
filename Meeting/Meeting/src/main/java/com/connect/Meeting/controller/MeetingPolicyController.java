@@ -24,7 +24,7 @@ public class MeetingPolicyController {
     private final MeetingPolicyService meetingPolicyService;
     private final JwtUtil jwtUtil;
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -41,7 +41,7 @@ public class MeetingPolicyController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get meeting policy", description = "Retrieves meeting policy configuration for the organization.")
     public ResponseEntity<MeetingPolicy> getMeetingPolicy(HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
+        String organizationId = getOrganizationId(httpRequest);
         if (organizationId == null) {
             throw new RuntimeException("Organization not found");
         }
@@ -54,7 +54,7 @@ public class MeetingPolicyController {
     public ResponseEntity<MeetingPolicy> updateMeetingPolicy(
             @RequestBody Map<String, Object> request,
             HttpServletRequest httpRequest) {
-        Long organizationId = getOrganizationId(httpRequest);
+        String organizationId = getOrganizationId(httpRequest);
         if (organizationId == null) {
             throw new RuntimeException("Organization not found");
         }

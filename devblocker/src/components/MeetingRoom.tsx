@@ -18,15 +18,15 @@ import { useAuth } from '../contexts/AuthContext';
 import type { WebRTCSignalingMessage } from '../types/api';
 
 interface MeetingRoomProps {
-  meetingId: number;
+  meetingId: string;
   onLeave: () => void;
-  participantIds?: number[]; // Initial list of participants
+  participantIds?: string[]; // Initial list of participants
   audioOnly?: boolean; // Start with audio only (no video)
   screenShare?: boolean; // Start with screen sharing
 }
 
 interface ParticipantVideo {
-  userId: number;
+  userId: string;
   displayName: string;
   stream: MediaStream | null;
   isMuted: boolean;

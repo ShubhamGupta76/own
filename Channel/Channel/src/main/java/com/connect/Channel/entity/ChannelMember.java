@@ -1,20 +1,22 @@
 package com.connect.Channel.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 
 import java.time.LocalDateTime;
 
 /**
  * Channel Member entity
  */
-@Entity
-@Table(name = "channel_members", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"channel_id", "user_id"})
-})
+@Document(collection = "channel_members")
+@CompoundIndex(name = "channel_user_idx", def = "{'channelId': 1, 'userId': 1}", unique = true)
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,24 +24,18 @@ import java.time.LocalDateTime;
 public class ChannelMember {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    @Column(name = "channel_id", nullable = false)
-    private Long channelId;
+    @Indexed
+    private String channelId;
     
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Indexed
+    private String userId;
     
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    @Indexed
+    private String organizationId;
     
-    @Column(name = "joined_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime joinedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        joinedAt = LocalDateTime.now();
-    }
 }
 

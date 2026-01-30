@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
@@ -30,8 +29,7 @@ public class ChannelManagementService {
     private String teamServiceUrl;
     
     
-    @Transactional
-    public ChannelResponse createChannel(Long teamId, CreateChannelRequest request, Long createdBy, Long organizationId, String role) {
+    public ChannelResponse createChannel(String teamId, CreateChannelRequest request, String createdBy, String organizationId, String role) {
         
         if (role.equals("EMPLOYEE")) {
             if (!isTeamMember(teamId, createdBy, organizationId)) {
@@ -84,8 +82,7 @@ public class ChannelManagementService {
     }
     
     
-    @Transactional
-    public ChannelMemberResponse addChannelMember(Long channelId, Long userId, Long currentUserId, Long organizationId, String role) {
+    public ChannelMemberResponse addChannelMember(String channelId, String userId, String currentUserId, String organizationId, String role) {
         
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found"));
@@ -122,8 +119,7 @@ public class ChannelManagementService {
     }
     
     
-    @Transactional
-    public void removeChannelMember(Long channelId, Long userId, Long currentUserId, Long organizationId, String role) {
+    public void removeChannelMember(String channelId, String userId, String currentUserId, String organizationId, String role) {
        
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found"));
@@ -150,8 +146,7 @@ public class ChannelManagementService {
     }
     
    
-    @Transactional(readOnly = true)
-    public List<ChannelResponse> getChannelsByTeam(Long teamId, Long organizationId) {
+    public List<ChannelResponse> getChannelsByTeam(String teamId, String organizationId) {
         // Verify team belongs to organization (call Team service or check locally)
         List<Channel> channels = channelRepository.findByTeamIdAndActiveTrue(teamId);
         
@@ -164,8 +159,7 @@ public class ChannelManagementService {
     /**
      * Get channel members
      */
-    @Transactional(readOnly = true)
-    public List<ChannelMemberResponse> getChannelMembers(Long channelId, Long organizationId) {
+    public List<ChannelMemberResponse> getChannelMembers(String channelId, String organizationId) {
         // Verify channel belongs to organization
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found"));
@@ -185,7 +179,7 @@ public class ChannelManagementService {
      * Check if user is member of team
      * Calls Team Service to validate team membership
      */
-    private boolean isTeamMember(Long teamId, Long userId, Long organizationId) {
+    private boolean isTeamMember(String teamId, String userId, String organizationId) {
         try {
             // Call Team Service to check membership
             java.util.Map response = webClient.get()

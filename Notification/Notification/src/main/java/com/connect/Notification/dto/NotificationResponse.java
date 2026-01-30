@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class NotificationResponse {
     
-    private Long id;
-    private Long organizationId;
-    private Long userId;
+    private String id;
+    private String organizationId;
+    private String userId;
     private String type;
     private String title;
     private String message;

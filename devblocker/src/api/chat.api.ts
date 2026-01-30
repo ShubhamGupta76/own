@@ -24,7 +24,7 @@ export const chatApi = {
    * Backend returns List<MessageResponse> directly, not PaginatedResponse
    */
   getChannelMessages: async (
-    channelId: number,
+    channelId: string,
     page: number = 0,
     size: number = 20
   ): Promise<Message[] | PaginatedResponse<Message>> => {
@@ -39,7 +39,7 @@ export const chatApi = {
    * Backend returns List<MessageResponse> directly, not PaginatedResponse
    */
   getDirectMessages: async (
-    userId: number,
+    userId: string,
     page: number = 0,
     size: number = 20
   ): Promise<Message[] | PaginatedResponse<Message>> => {

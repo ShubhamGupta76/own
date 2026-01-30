@@ -21,7 +21,7 @@ public class ChatRoomResponse {
     private Long roomId;
     private Long user1Id;
     private Long user2Id;
-    private Long organizationId;
+    private String organizationId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

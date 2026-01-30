@@ -38,7 +38,7 @@ export const meetingsApi = {
   /**
    * Get meeting by ID
    */
-  getMeetingById: async (meetingId: number): Promise<Meeting> => {
+  getMeetingById: async (meetingId: string): Promise<Meeting> => {
     const response = await apiClient.get<Meeting>(`/meetings/${meetingId}`);
     return response.data;
   },
@@ -46,8 +46,8 @@ export const meetingsApi = {
   /**
    * Join meeting
    */
-  joinMeeting: async (meetingId: number): Promise<{ participantIds: number[] }> => {
-    const response = await apiClient.post<{ participantIds: number[] }>(
+  joinMeeting: async (meetingId: string): Promise<{ participantIds: string[] }> => {
+    const response = await apiClient.post<{ participantIds: string[] }>(
       API_CONFIG.ENDPOINTS.MEETINGS.JOIN(meetingId)
     );
     return response.data;
@@ -56,35 +56,35 @@ export const meetingsApi = {
   /**
    * Leave meeting
    */
-  leaveMeeting: async (meetingId: number): Promise<void> => {
+  leaveMeeting: async (meetingId: string): Promise<void> => {
     await apiClient.post(API_CONFIG.ENDPOINTS.MEETINGS.LEAVE(meetingId));
   },
 
   /**
    * Start screen share
    */
-  startScreenShare: async (meetingId: number): Promise<void> => {
+  startScreenShare: async (meetingId: string): Promise<void> => {
     await apiClient.post(API_CONFIG.ENDPOINTS.MEETINGS.SCREEN_SHARE_START(meetingId));
   },
 
   /**
    * Stop screen share
    */
-  stopScreenShare: async (meetingId: number): Promise<void> => {
+  stopScreenShare: async (meetingId: string): Promise<void> => {
     await apiClient.post(API_CONFIG.ENDPOINTS.MEETINGS.SCREEN_SHARE_STOP(meetingId));
   },
 
   /**
    * Start recording
    */
-  startRecording: async (meetingId: number): Promise<void> => {
+  startRecording: async (meetingId: string): Promise<void> => {
     await apiClient.post(API_CONFIG.ENDPOINTS.MEETINGS.RECORDING_START(meetingId));
   },
 
   /**
    * Stop recording
    */
-  stopRecording: async (meetingId: number, recordingUrl: string): Promise<void> => {
+  stopRecording: async (meetingId: string, recordingUrl: string): Promise<void> => {
     await apiClient.post(API_CONFIG.ENDPOINTS.MEETINGS.RECORDING_STOP(meetingId), {
       recordingUrl,
     });
@@ -93,7 +93,7 @@ export const meetingsApi = {
   /**
    * Add meeting note
    */
-  addNote: async (meetingId: number, content: string): Promise<MeetingNote> => {
+  addNote: async (meetingId: string, content: string): Promise<MeetingNote> => {
     const response = await apiClient.post<MeetingNote>(
       API_CONFIG.ENDPOINTS.MEETINGS.NOTES(meetingId),
       { content }
@@ -104,7 +104,7 @@ export const meetingsApi = {
   /**
    * Get meeting notes
    */
-  getNotes: async (meetingId: number): Promise<MeetingNote[]> => {
+  getNotes: async (meetingId: string): Promise<MeetingNote[]> => {
     const response = await apiClient.get<MeetingNote[]>(
       API_CONFIG.ENDPOINTS.MEETINGS.NOTES(meetingId)
     );

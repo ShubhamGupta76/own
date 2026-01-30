@@ -17,17 +17,29 @@ export const AdminDashboardPage: React.FC = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user?.organizationId || user.organizationId === 0) {
+      console.log('AdminDashboardPage: fetchStats called', { user, organizationId: user?.organizationId });
+      
+      if (!user?.organizationId || user.organizationId === '' || user.organizationId === '0') {
+        console.log('AdminDashboardPage: No organizationId, skipping stats fetch');
         setIsLoading(false);
         return;
       }
 
       try {
         setIsLoading(true);
+        console.log('AdminDashboardPage: Fetching stats...');
         const [users, teams] = await Promise.all([
-          userApi.getUsers().catch(() => []),
-          teamsApi.getTeams().catch(() => []),
+          userApi.getUsers().catch((err) => {
+            console.error('Error fetching users:', err);
+            return [];
+          }),
+          teamsApi.getTeams().catch((err) => {
+            console.error('Error fetching teams:', err);
+            return [];
+          }),
         ]);
+
+        console.log('AdminDashboardPage: Stats fetched', { usersCount: users.length, teamsCount: teams.length });
 
         setStats({
           totalUsers: users.length,
@@ -42,8 +54,13 @@ export const AdminDashboardPage: React.FC = () => {
       }
     };
 
-    fetchStats();
-  }, [user?.organizationId]);
+    if (user) {
+      fetchStats();
+    } else {
+      console.log('AdminDashboardPage: User not loaded yet');
+      setIsLoading(false);
+    }
+  }, [user, user?.organizationId]);
 
   const statCards = [
     { label: 'Total Users', value: isLoading ? '...' : stats.totalUsers.toString(), icon: HiUsers, color: 'blue', path: '/app/admin/users' },
@@ -52,11 +69,24 @@ export const AdminDashboardPage: React.FC = () => {
     { label: 'System Health', value: stats.systemHealth, icon: HiChartBar, color: 'yellow', path: '/app/admin/settings' },
   ];
 
+  if (!user) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {user?.email}</p>
+        <p className="text-gray-600">Welcome back, {user?.email || 'Admin'}</p>
       </div>
 
       {/* Stats Grid */}

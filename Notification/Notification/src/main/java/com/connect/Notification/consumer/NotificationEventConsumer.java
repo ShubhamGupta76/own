@@ -32,7 +32,7 @@ public class NotificationEventConsumer {
     public void consumeChatEvent(Map<String, Object> event, Acknowledgment acknowledgment) {
         try {
             String eventType = (String) event.get("eventType");
-            Long organizationId = getLongValue(event, "organizationId");
+            String organizationId = getStringValue(event, "organizationId");
             
             if ("MESSAGE_SENT".equals(eventType)) {
                 handleMessageSentEvent(event, organizationId);
@@ -57,7 +57,7 @@ public class NotificationEventConsumer {
     public void consumeMeetingEvent(Map<String, Object> event, Acknowledgment acknowledgment) {
         try {
             String eventType = (String) event.get("eventType");
-            Long organizationId = getLongValue(event, "organizationId");
+            String organizationId = getStringValue(event, "organizationId");
             
             switch (eventType) {
                 case "MEETING_CREATED":
@@ -91,7 +91,7 @@ public class NotificationEventConsumer {
     public void consumeFileEvent(Map<String, Object> event, Acknowledgment acknowledgment) {
         try {
             String eventType = (String) event.get("eventType");
-            Long organizationId = getLongValue(event, "organizationId");
+            String organizationId = getStringValue(event, "organizationId");
             
             if ("FILE_UPLOADED".equals(eventType)) {
                 handleFileUploadedEvent(event, organizationId);
@@ -111,7 +111,7 @@ public class NotificationEventConsumer {
     public void consumeTaskEvent(Map<String, Object> event, Acknowledgment acknowledgment) {
         try {
             String eventType = (String) event.get("eventType");
-            Long organizationId = getLongValue(event, "organizationId");
+            String organizationId = getStringValue(event, "organizationId");
             
             switch (eventType) {
                 case "TASK_ASSIGNED":
@@ -134,19 +134,19 @@ public class NotificationEventConsumer {
     
     // ========== Event Handlers ==========
     
-    private void handleMessageSentEvent(Map<String, Object> event, Long organizationId) {
-        Long channelId = getLongValue(event, "channelId");
+    private void handleMessageSentEvent(Map<String, Object> event, String organizationId) {
+        String channelId = getStringValue(event, "channelId");
         String messageContent = (String) event.get("messageContent");
         
         // Get mentioned user IDs
         @SuppressWarnings("unchecked")
-        List<Long> mentionedUserIds = (List<Long>) event.get("mentionedUserIds");
+        List<Object> mentionedUserIds = (List<Object>) event.get("mentionedUserIds");
         
         if (mentionedUserIds != null && !mentionedUserIds.isEmpty()) {
             // Create notifications for mentioned users
-            for (Long mentionedUserId : mentionedUserIds) {
+            for (Object mentionedUserId : mentionedUserIds) {
                 notificationService.createAndSendNotification(
-                        mentionedUserId,
+                        mentionedUserId != null ? mentionedUserId.toString() : null,
                         organizationId,
                         Notification.NotificationType.MENTION,
                         "You were mentioned",
@@ -162,17 +162,17 @@ public class NotificationEventConsumer {
         }
     }
     
-    private void handleMeetingCreatedEvent(Map<String, Object> event, Long organizationId) {
-        Long meetingId = getLongValue(event, "meetingId");
+    private void handleMeetingCreatedEvent(Map<String, Object> event, String organizationId) {
+        String meetingId = getStringValue(event, "meetingId");
         String meetingTitle = (String) event.get("meetingTitle");
         @SuppressWarnings("unchecked")
-        List<Long> participantIds = (List<Long>) event.get("participantIds");
+        List<Object> participantIds = (List<Object>) event.get("participantIds");
         
         if (participantIds != null && !participantIds.isEmpty()) {
             // Notify all participants (except the creator who already knows)
-            for (Long participantId : participantIds) {
+            for (Object participantId : participantIds) {
                 notificationService.createAndSendNotification(
-                        participantId,
+                        participantId != null ? participantId.toString() : null,
                         organizationId,
                         Notification.NotificationType.MEETING,
                         "Meeting Created",
@@ -185,13 +185,13 @@ public class NotificationEventConsumer {
         }
     }
     
-    private void handleUserJoinedEvent(Map<String, Object> event, Long organizationId) {
+    private void handleUserJoinedEvent(Map<String, Object> event, String organizationId) {
         // Optional: Notify meeting organizer or other participants
         // For now, we'll skip this to avoid notification spam
     }
     
-    private void handleRecordingStartedEvent(Map<String, Object> event, Long organizationId) {
-        Long meetingId = getLongValue(event, "meetingId");
+    private void handleRecordingStartedEvent(Map<String, Object> event, String organizationId) {
+        String meetingId = getStringValue(event, "meetingId");
         
         // Notify all meeting participants that recording has started
         // Note: In production, fetch participants from Meeting Service
@@ -207,8 +207,8 @@ public class NotificationEventConsumer {
         );
     }
     
-    private void handleRecordingStoppedEvent(Map<String, Object> event, Long organizationId) {
-        Long meetingId = getLongValue(event, "meetingId");
+    private void handleRecordingStoppedEvent(Map<String, Object> event, String organizationId) {
+        String meetingId = getStringValue(event, "meetingId");
         String recordingUrl = (String) event.get("recordingUrl");
         
         // Notify all meeting participants that recording is available
@@ -224,8 +224,8 @@ public class NotificationEventConsumer {
         );
     }
     
-    private void handleFileUploadedEvent(Map<String, Object> event, Long organizationId) {
-        Long fileId = getLongValue(event, "fileId");
+    private void handleFileUploadedEvent(Map<String, Object> event, String organizationId) {
+        String fileId = getStringValue(event, "fileId");
         String filename = (String) event.get("filename");
         
         // Notify channel members about new file
@@ -242,10 +242,10 @@ public class NotificationEventConsumer {
         );
     }
     
-    private void handleTaskAssignedEvent(Map<String, Object> event, Long organizationId) {
-        Long taskId = getLongValue(event, "taskId");
+    private void handleTaskAssignedEvent(Map<String, Object> event, String organizationId) {
+        String taskId = getStringValue(event, "taskId");
         String taskTitle = (String) event.get("taskTitle");
-        Long assignedTo = getLongValue(event, "assignedTo");
+        String assignedTo = getStringValue(event, "assignedTo");
         
         // Notify the assigned user
         notificationService.createAndSendNotification(
@@ -260,8 +260,8 @@ public class NotificationEventConsumer {
         );
     }
     
-    private void handleTaskStatusChangedEvent(Map<String, Object> event, Long organizationId) {
-        Long taskId = getLongValue(event, "taskId");
+    private void handleTaskStatusChangedEvent(Map<String, Object> event, String organizationId) {
+        String taskId = getStringValue(event, "taskId");
         String taskTitle = (String) event.get("taskTitle");
         String newStatus = (String) event.get("newStatus");
         
@@ -279,8 +279,8 @@ public class NotificationEventConsumer {
         );
     }
     
-    private void handleTaskCommentedEvent(Map<String, Object> event, Long organizationId) {
-        Long taskId = getLongValue(event, "taskId");
+    private void handleTaskCommentedEvent(Map<String, Object> event, String organizationId) {
+        String taskId = getStringValue(event, "taskId");
         String taskTitle = (String) event.get("taskTitle");
         
         // Notify task assignee and creator about new comment
@@ -295,6 +295,12 @@ public class NotificationEventConsumer {
                 taskId,
                 taskTitle
         );
+    }
+    
+    private String getStringValue(Map<String, Object> event, String key) {
+        Object value = event.get(key);
+        if (value == null) return null;
+        return value.toString();
     }
     
     private Long getLongValue(Map<String, Object> event, String key) {
@@ -314,8 +320,8 @@ public class NotificationEventConsumer {
             dlqMessage.put("timestamp", System.currentTimeMillis());
             dlqMessage.put("service", "notification-service");
             
-            Long organizationId = getLongValue(event, "organizationId");
-            String key = organizationId != null ? organizationId.toString() : "unknown";
+            String organizationId = getStringValue(event, "organizationId");
+            String key = organizationId != null ? organizationId : "unknown";
             
             kafkaTemplate.send(dlqTopic, key, dlqMessage);
             log.info("Sent failed event to DLQ topic: {}", dlqTopic);

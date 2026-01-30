@@ -37,8 +37,8 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                 if (jwtUtil.validateToken(token)) {
                     String role = jwtUtil.extractRole(token);
                     String email = jwtUtil.extractEmail(token);
-                    Long userId = jwtUtil.extractUserId(token);
-                    Long organizationId = jwtUtil.extractOrganizationId(token);
+                    String userId = jwtUtil.extractUserId(token);
+                    String organizationId = jwtUtil.extractOrganizationId(token);
                     
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             email,

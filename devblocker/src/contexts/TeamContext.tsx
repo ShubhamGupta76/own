@@ -7,19 +7,19 @@ import type { Team, Channel } from '../types/api';
 
 interface TeamContextType {
   teams: Team[];
-  channels: Record<number, Channel[]>; // teamId -> channels[]
-  expandedTeams: Set<number>;
+  channels: Record<string, Channel[]>; // teamId -> channels[]
+  expandedTeams: Set<string>;
   selectedTeam: Team | null;
   selectedChannel: Channel | null;
   isLoading: boolean;
   error: string | null;
-  toggleTeam: (teamId: number) => void;
+  toggleTeam: (teamId: string) => void;
   selectTeam: (team: Team | null) => void;
   selectChannel: (channel: Channel | null) => void;
   refreshTeams: () => Promise<void>;
-  refreshChannels: (teamId: number) => Promise<void>;
+  refreshChannels: (teamId: string) => Promise<void>;
   createTeam: (name: string, description?: string) => Promise<Team>;
-  createChannel: (teamId: number, name: string, description?: string) => Promise<Channel>;
+  createChannel: (teamId: string, name: string, description?: string) => Promise<Channel>;
 }
 
 const TeamContext = createContext<TeamContextType | undefined>(undefined);
@@ -40,8 +40,8 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const location = useLocation();
   const [teams, setTeams] = useState<Team[]>([]);
-  const [channels, setChannels] = useState<Record<number, Channel[]>>({});
-  const [expandedTeams, setExpandedTeams] = useState<Set<number>>(new Set());
+  const [channels, setChannels] = useState<Record<string, Channel[]>>({});
+  const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,7 +86,7 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshChannels = async (teamId: number) => {
+  const refreshChannels = async (teamId: string) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -108,7 +108,7 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     }
   };
 
-  const toggleTeam = (teamId: number) => {
+  const toggleTeam = (teamId: string) => {
     setExpandedTeams((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(teamId)) {
@@ -186,7 +186,7 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   };
 
   const createChannel = async (
-    teamId: number,
+    teamId: string,
     name: string,
     description?: string
   ): Promise<Channel> => {
@@ -212,9 +212,9 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
       return;
     }
     
-    // Check organizationId - it might be undefined, null, or 0 during onboarding
+    // Check organizationId - it might be undefined, null, or empty string during onboarding
     const orgId = (user as any).organizationId;
-    if (!orgId || orgId === 0 || orgId === null || orgId === undefined) {
+    if (!orgId || orgId === '' || orgId === null || orgId === undefined) {
       return;
     }
     

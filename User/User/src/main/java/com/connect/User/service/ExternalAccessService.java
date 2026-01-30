@@ -9,7 +9,6 @@ import com.connect.User.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,9 +30,8 @@ public class ExternalAccessService {
      * Invite an external user
      * Only ADMIN can invite external users
      */
-    @Transactional
     public ExternalAccessResponse inviteExternalUser(InviteExternalUserRequest request, 
-                                                     Long grantedBy, Long organizationId) {
+                                                     String grantedBy, String organizationId) {
         // Check if user already exists
         if (userRepository.findByEmailAndOrganizationId(request.getEmail(), organizationId).isPresent()) {
             throw new RuntimeException("User with this email already exists in the organization");
@@ -58,7 +56,7 @@ public class ExternalAccessService {
         
         // Grant access to teams
         if (request.getTeamIds() != null && !request.getTeamIds().isEmpty()) {
-            for (Long teamId : request.getTeamIds()) {
+            for (String teamId : request.getTeamIds()) {
                 ExternalAccessMapping mapping = ExternalAccessMapping.builder()
                         .userId(externalUser.getId())
                         .organizationId(organizationId)
@@ -72,7 +70,7 @@ public class ExternalAccessService {
         
         // Grant access to channels
         if (request.getChannelIds() != null && !request.getChannelIds().isEmpty()) {
-            for (Long channelId : request.getChannelIds()) {
+            for (String channelId : request.getChannelIds()) {
                 ExternalAccessMapping mapping = ExternalAccessMapping.builder()
                         .userId(externalUser.getId())
                         .organizationId(organizationId)
@@ -91,8 +89,7 @@ public class ExternalAccessService {
     /**
      * Get external access for a user
      */
-    @Transactional(readOnly = true)
-    public ExternalAccessResponse getExternalAccess(Long userId, Long organizationId) {
+    public ExternalAccessResponse getExternalAccess(String userId, String organizationId) {
         User user = userRepository.findByIdAndOrganizationId(userId, organizationId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -103,13 +100,13 @@ public class ExternalAccessService {
         List<ExternalAccessMapping> mappings = accessMappingRepository
                 .findByUserIdAndOrganizationId(userId, organizationId);
         
-        List<Long> teamIds = mappings.stream()
+        List<String> teamIds = mappings.stream()
                 .filter(m -> m.getTeamId() != null)
                 .map(ExternalAccessMapping::getTeamId)
                 .distinct()
                 .collect(Collectors.toList());
         
-        List<Long> channelIds = mappings.stream()
+        List<String> channelIds = mappings.stream()
                 .filter(m -> m.getChannelId() != null)
                 .map(ExternalAccessMapping::getChannelId)
                 .distinct()
@@ -131,16 +128,14 @@ public class ExternalAccessService {
     /**
      * Check if external user has access to a team
      */
-    @Transactional(readOnly = true)
-    public boolean hasTeamAccess(Long userId, Long teamId) {
+    public boolean hasTeamAccess(String userId, String teamId) {
         return accessMappingRepository.existsByUserIdAndTeamId(userId, teamId);
     }
     
     /**
      * Check if external user has access to a channel
      */
-    @Transactional(readOnly = true)
-    public boolean hasChannelAccess(Long userId, Long channelId) {
+    public boolean hasChannelAccess(String userId, String channelId) {
         return accessMappingRepository.existsByUserIdAndChannelId(userId, channelId);
     }
     
@@ -151,13 +146,13 @@ public class ExternalAccessService {
         List<ExternalAccessMapping> mappings = accessMappingRepository
                 .findByUserIdAndOrganizationId(user.getId(), user.getOrganizationId());
         
-        List<Long> teamIds = mappings.stream()
+        List<String> teamIds = mappings.stream()
                 .filter(m -> m.getTeamId() != null)
                 .map(ExternalAccessMapping::getTeamId)
                 .distinct()
                 .collect(Collectors.toList());
         
-        List<Long> channelIds = mappings.stream()
+        List<String> channelIds = mappings.stream()
                 .filter(m -> m.getChannelId() != null)
                 .map(ExternalAccessMapping::getChannelId)
                 .distinct()

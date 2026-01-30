@@ -7,7 +7,6 @@ import com.connect.Task.repository.TaskCommentRepository;
 import com.connect.Task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,8 +26,7 @@ public class TaskService {
     /**
      * Create a new task
      */
-    @Transactional
-    public TaskResponse createTask(CreateTaskRequest request, Long createdBy, Long organizationId, String role) {
+    public TaskResponse createTask(CreateTaskRequest request, String createdBy, String organizationId, String role) {
         // Validate role permissions
         if (!role.equals("ADMIN") && !role.equals("MANAGER") && !role.equals("EMPLOYEE")) {
             throw new RuntimeException("Access denied: Insufficient permissions");
@@ -73,8 +71,7 @@ public class TaskService {
     /**
      * Assign a task to a user
      */
-    @Transactional
-    public TaskResponse assignTask(Long taskId, Long assignedToUserId, Long organizationId, String role, Long assignedByUserId) {
+    public TaskResponse assignTask(String taskId, String assignedToUserId, String organizationId, String role, String assignedByUserId) {
         // Validate role permissions (ADMIN and MANAGER can assign)
         if (!role.equals("ADMIN") && !role.equals("MANAGER")) {
             throw new RuntimeException("Only ADMIN and MANAGER can assign tasks");
@@ -105,8 +102,7 @@ public class TaskService {
     /**
      * Update task status
      */
-    @Transactional
-    public TaskResponse updateTaskStatus(Long taskId, String status, Long userId, Long organizationId, String role) {
+    public TaskResponse updateTaskStatus(String taskId, String status, String userId, String organizationId, String role) {
         // Get task
         Task task = taskRepository.findByIdAndOrganizationId(taskId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
@@ -153,8 +149,7 @@ public class TaskService {
     /**
      * Add a comment to a task
      */
-    @Transactional
-    public TaskCommentResponse addComment(Long taskId, TaskCommentRequest request, Long userId, Long organizationId) {
+    public TaskCommentResponse addComment(String taskId, TaskCommentRequest request, String userId, String organizationId) {
         // Verify task exists
         Task task = taskRepository.findByIdAndOrganizationId(taskId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
@@ -185,8 +180,7 @@ public class TaskService {
     /**
      * Get tasks for a channel
      */
-    @Transactional(readOnly = true)
-    public List<TaskResponse> getChannelTasks(Long channelId, Long organizationId) {
+    public List<TaskResponse> getChannelTasks(String channelId, String organizationId) {
         List<Task> tasks = taskRepository.findByChannelIdAndOrganizationId(channelId, organizationId);
         
         return tasks.stream()
@@ -197,8 +191,7 @@ public class TaskService {
     /**
      * Get task by ID
      */
-    @Transactional(readOnly = true)
-    public TaskResponse getTask(Long taskId, Long organizationId) {
+    public TaskResponse getTask(String taskId, String organizationId) {
         Task task = taskRepository.findByIdAndOrganizationId(taskId, organizationId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         
@@ -208,8 +201,7 @@ public class TaskService {
     /**
      * Get all tasks for organization
      */
-    @Transactional(readOnly = true)
-    public List<TaskResponse> getAllTasks(Long organizationId) {
+    public List<TaskResponse> getAllTasks(String organizationId) {
         List<Task> tasks = taskRepository.findByOrganizationId(organizationId);
         
         return tasks.stream()
@@ -220,8 +212,7 @@ public class TaskService {
     /**
      * Get tasks assigned to a user
      */
-    @Transactional(readOnly = true)
-    public List<TaskResponse> getMyTasks(Long userId, Long organizationId) {
+    public List<TaskResponse> getMyTasks(String userId, String organizationId) {
         List<Task> tasks = taskRepository.findByAssignedToAndOrganizationId(userId, organizationId);
         
         return tasks.stream()

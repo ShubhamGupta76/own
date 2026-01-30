@@ -16,14 +16,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class FileUploadResponse {
     
-    private Long id;
+    private String id;
     private String filename;
     private Long size;
     private String contentType;
-    private Long channelId;
-    private Long chatMessageId;
-    private Long uploadedBy;
-    private Long organizationId;
+    private String channelId;
+    private String chatMessageId;
+    private String uploadedBy;
+    private String organizationId;
     private Integer version;
     private LocalDateTime uploadedAt;
     private String downloadUrl; // URL to download the file

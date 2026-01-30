@@ -13,13 +13,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -34,14 +33,16 @@ public class AuthService {
         @Value("${user.service.url:http://localhost:8102}")
         private String userServiceUrl;
 
-        @Transactional
         public AuthResponse register(RegisterRequest request) {
-                if (adminRepository.existsByEmail(request.getEmail())) {
-                        throw new RuntimeException("Admin with email " + request.getEmail() + " already exists");
+                // Normalize email to lowercase for consistency
+                String normalizedEmail = request.getEmail().toLowerCase().trim();
+                
+                if (adminRepository.existsByEmail(normalizedEmail)) {
+                        throw new RuntimeException("Admin with email " + normalizedEmail + " already exists");
                 }
 
                 Admin admin = Admin.builder()
-                                .email(request.getEmail())
+                                .email(normalizedEmail)
                                 .password(passwordEncoder.encode(request.getPassword()))
                                 .firstName(request.getFirstName())
                                 .lastName(request.getLastName())
@@ -70,19 +71,38 @@ public class AuthService {
                                 .build();
         }
 
-        @Transactional(readOnly = true)
         public AuthResponse login(LoginRequest request) {
-                Admin admin = adminRepository.findByEmailAndActiveTrue(request.getEmail())
-                                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+                // Normalize email to lowercase for case-insensitive lookup
+                String normalizedEmail = request.getEmail().toLowerCase().trim();
+                
+                log.info("Attempting login for email: {}", normalizedEmail);
+                
+                // Try case-insensitive lookup
+                Optional<Admin> adminOpt = adminRepository.findByEmailAndActiveTrue(normalizedEmail);
+                
+                // If not found, try original email (in case it was stored with different case)
+                if (adminOpt.isEmpty()) {
+                        adminOpt = adminRepository.findByEmailAndActiveTrue(request.getEmail().trim());
+                }
+                
+                Admin admin = adminOpt.orElseThrow(() -> {
+                        log.warn("Login failed: Admin not found with email: {} (normalized: {})", request.getEmail(), normalizedEmail);
+                        return new RuntimeException("Invalid email or password");
+                });
 
+                log.info("Admin found: ID={}, Email={}, Active={}", admin.getId(), admin.getEmail(), admin.getActive());
+                
                 if (!passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
+                        log.warn("Login failed: Password mismatch for email: {}", normalizedEmail);
                         throw new RuntimeException("Invalid email or password");
                 }
+                
+                log.info("Password verified successfully for email: {}", normalizedEmail);
 
-                Long organizationId = admin.getOrganizationId();
+                String organizationId = admin.getOrganizationId();
                 
                 // Log organizationId status for debugging
-                if (organizationId == null || organizationId == 0) {
+                if (organizationId == null || organizationId.isEmpty()) {
                         log.warn("Admin {} logged in but has no organizationId assigned. Token will not include organizationId.", admin.getEmail());
                 } else {
                         log.info("Admin {} logged in with organizationId: {}", admin.getEmail(), organizationId);
@@ -108,8 +128,7 @@ public class AuthService {
                                 .build();
         }
 
-        @Transactional(propagation = Propagation.REQUIRES_NEW)
-        public Admin updateAdminOrganizationId(Long adminId, Long organizationId) {
+        public Admin updateAdminOrganizationId(String adminId, String organizationId) {
                 Admin admin = adminRepository.findById(adminId)
                                 .orElseThrow(() -> new RuntimeException("Admin not found"));
                 admin.setOrganizationId(organizationId);
@@ -118,24 +137,21 @@ public class AuthService {
                 return admin;
         }
 
-        @Transactional
-        public void updateOrganizationId(Long adminId, Long organizationId) {
+        public void updateOrganizationId(String adminId, String organizationId) {
                 Admin admin = adminRepository.findById(adminId)
                                 .orElseThrow(() -> new RuntimeException("Admin not found"));
                 admin.setOrganizationId(organizationId);
                 adminRepository.save(admin);
         }
 
-        @Transactional
-        public AuthResponse updateOrganizationIdAndGetToken(Long adminId, Long organizationId) {
+        public AuthResponse updateOrganizationIdAndGetToken(String adminId, String organizationId) {
                 log.info("Updating organizationId {} for admin {}", organizationId, adminId);
                 
-                // Try to find admin, with retry logic for transaction visibility
+                // Try to find admin, with retry logic
                 Admin admin = findAdminWithRetry(adminId);
                 
                 admin.setOrganizationId(organizationId);
                 admin = adminRepository.save(admin);
-                // Transaction will commit automatically when method returns
                 log.info("Successfully updated organizationId {} for admin {}", organizationId, adminId);
 
                 String token = jwtUtil.generateToken(
@@ -157,11 +173,11 @@ public class AuthService {
         }
 
         public AuthResponse registerOrganization(OrganizationRegistrationRequest request) {
-                // First, register the admin user in a separate transaction to ensure it's committed
+                // First, register the admin user
                 Admin admin = createAdminUser(request);
-                final Long adminId = admin.getId();
+                final String adminId = admin.getId();
                 
-                // Verify admin exists in database (this ensures the transaction is committed and visible)
+                // Verify admin exists in database
                 Admin verifiedAdmin = verifyAdminExists(adminId);
                 final String adminEmail = verifiedAdmin.getEmail();
                 log.info("Admin verified and committed successfully with ID: {}", adminId);
@@ -209,16 +225,16 @@ public class AuthService {
                         }
 
                         // Extract organizationId and new token from response
-                        Long organizationId = null;
+                        String organizationId = null;
                         String newToken = null;
                         
                         if (orgResponse.get("organizationId") != null) {
-                                organizationId = Long.valueOf(orgResponse.get("organizationId").toString());
+                                organizationId = orgResponse.get("organizationId").toString();
                         } else if (orgResponse.get("organization") != null) {
                                 @SuppressWarnings("unchecked")
                                 Map<String, Object> org = (Map<String, Object>) orgResponse.get("organization");
                                 if (org.get("id") != null) {
-                                        organizationId = Long.valueOf(org.get("id").toString());
+                                        organizationId = org.get("id").toString();
                                 }
                         }
 
@@ -277,14 +293,16 @@ public class AuthService {
                 }
         }
 
-        @Transactional(propagation = Propagation.REQUIRES_NEW)
         private Admin createAdminUser(OrganizationRegistrationRequest request) {
-                if (adminRepository.existsByEmail(request.getAdminEmail())) {
-                        throw new RuntimeException("Admin with email " + request.getAdminEmail() + " already exists");
+                // Normalize email to lowercase for consistency
+                String normalizedEmail = request.getAdminEmail().toLowerCase().trim();
+                
+                if (adminRepository.existsByEmail(normalizedEmail)) {
+                        throw new RuntimeException("Admin with email " + normalizedEmail + " already exists");
                 }
 
                 Admin admin = Admin.builder()
-                                .email(request.getAdminEmail())
+                                .email(normalizedEmail)
                                 .password(passwordEncoder.encode(request.getAdminPassword()))
                                 .firstName(request.getAdminFirstName())
                                 .lastName(request.getAdminLastName())
@@ -294,66 +312,28 @@ public class AuthService {
                                 .build();
 
                 admin = adminRepository.save(admin);
-                // Transaction will commit automatically when method returns due to REQUIRES_NEW
-                log.info("Admin created and will be committed with ID: {} in separate transaction", admin.getId());
+                log.info("Admin created with ID: {}", admin.getId());
                 return admin;
         }
 
         /**
-         * Verify admin exists in database - this ensures the transaction is committed and visible
-         * Uses a new transaction to read from database, ensuring we see committed data
+         * Verify admin exists in database
          */
-        @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
-        private Admin verifyAdminExists(Long adminId) {
-                // Small delay to ensure transaction propagation (only if needed)
-                try {
-                        Thread.sleep(50); // 50ms delay to ensure transaction is fully committed
-                } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        log.warn("Thread interrupted during admin verification delay");
-                }
-                
+        private Admin verifyAdminExists(String adminId) {
                 Admin admin = adminRepository.findById(adminId)
                                 .orElseThrow(() -> new RuntimeException(
-                                        "Admin with ID " + adminId + " not found after creation. " +
-                                        "This may indicate a transaction commit issue."));
+                                        "Admin with ID " + adminId + " not found after creation."));
                 
                 log.info("Admin verified successfully: ID={}, Email={}", admin.getId(), admin.getEmail());
                 return admin;
         }
 
         /**
-         * Find admin with retry logic to handle transaction visibility issues
+         * Find admin with retry logic
          */
-        private Admin findAdminWithRetry(Long adminId) {
-                int maxRetries = 3;
-                int retryDelay = 100; // milliseconds
-                
-                for (int attempt = 1; attempt <= maxRetries; attempt++) {
-                        Admin admin = adminRepository.findById(adminId).orElse(null);
-                        if (admin != null) {
-                                if (attempt > 1) {
-                                        log.info("Admin found on attempt {} for adminId {}", attempt, adminId);
-                                }
-                                return admin;
-                        }
-                        
-                        if (attempt < maxRetries) {
-                                log.warn("Admin not found on attempt {} for adminId {}, retrying in {}ms", 
-                                        attempt, adminId, retryDelay);
-                                try {
-                                        Thread.sleep(retryDelay);
-                                } catch (InterruptedException e) {
-                                        Thread.currentThread().interrupt();
-                                        break;
-                                }
-                                // Exponential backoff
-                                retryDelay *= 2;
-                        }
-                }
-                
-                log.error("Admin with ID {} not found after {} attempts", adminId, maxRetries);
-                throw new RuntimeException("Admin not found with ID: " + adminId + 
-                        ". The admin may not have been committed yet or may not exist.");
+        private Admin findAdminWithRetry(String adminId) {
+                Admin admin = adminRepository.findById(adminId)
+                                .orElseThrow(() -> new RuntimeException("Admin not found with ID: " + adminId));
+                return admin;
         }
 }

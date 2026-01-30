@@ -32,12 +32,12 @@ public class ExternalAccessController {
     /**
      * Extract user information from JWT token
      */
-    private Long getUserId(HttpServletRequest request) {
+    private String getUserId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractUserId(token);
     }
     
-    private Long getOrganizationId(HttpServletRequest request) {
+    private String getOrganizationId(HttpServletRequest request) {
         String token = extractToken(request);
         return jwtUtil.extractOrganizationId(token);
     }
@@ -67,10 +67,10 @@ public class ExternalAccessController {
             @Valid @RequestBody InviteExternalUserRequest request,
             HttpServletRequest httpRequest) {
         try {
-            Long userId = getUserId(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String userId = getUserId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
@@ -95,14 +95,14 @@ public class ExternalAccessController {
     @PreAuthorize("hasAnyRole('ADMIN','EXTERNAL_USER')")
     @Operation(summary = "Get external access", description = "Retrieves external access mappings for a user. ADMIN can view any user, EXTERNAL_USER can only view their own.")
     public ResponseEntity<ExternalAccessResponse> getExternalAccess(
-            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String userId,
             HttpServletRequest httpRequest) {
         try {
-            Long currentUserId = getUserId(httpRequest);
+            String currentUserId = getUserId(httpRequest);
             String role = getRole(httpRequest);
-            Long organizationId = getOrganizationId(httpRequest);
+            String organizationId = getOrganizationId(httpRequest);
             
-            if (organizationId == null) {
+            if (organizationId == null || organizationId.isEmpty()) {
                 throw new RuntimeException("Organization not found");
             }
             
